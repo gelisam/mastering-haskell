@@ -6,8 +6,8 @@ import System.IO.Unsafe
 filenameLength :: FilePath -> Int
 filenameLength filePath = trace "filenameLength" $ length filePath
 
-contentsLength :: FilePath -> IO Int
-contentsLength filePath = trace "contentsLength" $ do
+contentsLength :: FilePath -> Int
+contentsLength filePath = trace "contentsLength" $ unsafePerformIO $ do
     contents <- readFile filePath
     return (length contents)
 
@@ -24,10 +24,10 @@ main = do
   
   writeFile "foo.txt" "abcd"
   print $   filenameLength "foo.txt"
-  print =<< contentsLength "foo.txt"
+  print $   contentsLength "foo.txt"
   
   putStrLn "--"
   
   writeFile "foo.txt" "hello world"
   print $   filenameLength "foo.txt"
-  print =<< contentsLength "foo.txt"
+  print $   contentsLength "foo.txt"
