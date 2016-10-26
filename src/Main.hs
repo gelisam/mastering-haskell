@@ -1,13 +1,13 @@
 module Main where
 
-
+import Debug.Trace
 
 
 filenameLength :: FilePath -> Int
-filenameLength filePath = length filePath
+filenameLength filePath = trace "filenameLength" $ length filePath
 
 contentsLength :: FilePath -> IO Int
-contentsLength filePath = do
+contentsLength filePath = trace "contentsLength" $ do
     contents <- readFile filePath
     return (length contents)
 
