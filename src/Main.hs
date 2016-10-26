@@ -1,6 +1,6 @@
 module Main where
 
-import Debug.Trace
+import System.IO.Unsafe
 
 
 filenameLength :: FilePath -> Int
@@ -10,6 +10,12 @@ contentsLength :: FilePath -> IO Int
 contentsLength filePath = trace "contentsLength" $ do
     contents <- readFile filePath
     return (length contents)
+
+
+trace :: String -> a -> a
+trace debugMessage x = unsafePerformIO $ do
+  putStrLn debugMessage
+  return x
 
 
 main :: IO ()
