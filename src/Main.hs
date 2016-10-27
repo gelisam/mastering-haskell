@@ -1,33 +1,21 @@
 module Main where
 
+import Codec.Picture
+import Debug.Trace
 import System.IO.Unsafe
 
 
-filenameLength :: FilePath -> Int
-filenameLength filePath = trace "filenameLength" $ length filePath
-
-contentsLength :: FilePath -> Int
-contentsLength filePath = trace "contentsLength" $ unsafePerformIO $ do
-    contents <- readFile filePath
-    return (length contents)
-
-
-trace :: String -> a -> a
-trace debugMessage x = unsafePerformIO $ do
-  putStrLn debugMessage
-  return x
+spriteSize :: FilePath -> (Int, Int)
+spriteSize filePath = trace "spriteSize" $ unsafePerformIO $ do
+    Right (ImageRGBA8 image) <- readPng filePath
+    return (imageWidth image, imageHeight image)
 
 
 main :: IO ()
 main = do
   putStrLn "example:"
   
-  writeFile "foo.txt" "abcd"
-  print $   filenameLength "foo.txt"
-  print $   contentsLength "foo.txt"
   
+  print $ spriteSize "player.png"
   putStrLn "--"
-  
-  writeFile "foo.txt" "hello world"
-  print $   filenameLength "foo.txt"
-  print $   contentsLength "foo.txt"
+  print $ spriteSize "player.png"
