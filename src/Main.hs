@@ -1,21 +1,27 @@
 module Main where
 
-import Codec.Picture
-import Debug.Trace
+import Data.IORef
+import System.IO.Unsafe
 
 
 
-spriteSize :: FilePath -> IO (Int, Int)
-spriteSize filePath = trace "spriteSize" $ do
-    Right (ImageRGBA8 image) <- readPng filePath
-    return (imageWidth image, imageHeight image)
+{-# NOINLINE globalCounter #-}
+globalCounter :: IORef Int
+globalCounter = unsafePerformIO $ newIORef 0
+
+readGlobalCount :: IO Int
+readGlobalCount = readIORef globalCounter
+
+incrGlobalCounter :: IO ()
+incrGlobalCounter = modifyIORef globalCounter (+ 1)
 
 
 main :: IO ()
 main = do
   putStrLn "example:"
-  playerSize <- spriteSize "player.png"
   
-  print playerSize
-  putStrLn "--"
-  print playerSize
+  
+  incrGlobalCounter
+  incrGlobalCounter
+  incrGlobalCounter
+  print =<< readGlobalCount
