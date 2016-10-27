@@ -2,11 +2,11 @@ module Main where
 
 import Codec.Picture
 import Debug.Trace
-import System.IO.Unsafe
 
 
-spriteSize :: FilePath -> (Int, Int)
-spriteSize filePath = trace "spriteSize" $ unsafePerformIO $ do
+
+spriteSize :: FilePath -> IO (Int, Int)
+spriteSize filePath = trace "spriteSize" $ do
     Right (ImageRGBA8 image) <- readPng filePath
     return (imageWidth image, imageHeight image)
 
@@ -14,8 +14,8 @@ spriteSize filePath = trace "spriteSize" $ unsafePerformIO $ do
 main :: IO ()
 main = do
   putStrLn "example:"
+  playerSize <- spriteSize "player.png"
   
-  
-  print $ spriteSize "player.png"
+  print playerSize
   putStrLn "--"
-  print $ spriteSize "player.png"
+  print playerSize
