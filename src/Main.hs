@@ -1,4 +1,4 @@
-module Main where
+module Main where 
 
 import Data.IORef
 import System.IO.Unsafe
