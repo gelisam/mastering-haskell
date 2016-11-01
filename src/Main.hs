@@ -1,27 +1,27 @@
 module Main where
 
 import Data.IORef
-import System.IO.Unsafe
 
 
 
-{-# NOINLINE globalCounter #-}
-globalCounter :: IORef Int
-globalCounter = unsafePerformIO $ newIORef 0
 
-readGlobalCount :: IO Int
-readGlobalCount = readIORef globalCounter
 
-incrGlobalCounter :: IO ()
-incrGlobalCounter = modifyIORef globalCounter (+ 1)
+
+
+
+readGlobalCount :: IORef Int -> IO Int
+readGlobalCount globalCounter = readIORef globalCounter
+
+incrGlobalCounter :: IORef Int -> IO ()
+incrGlobalCounter globalCounter = modifyIORef globalCounter (+ 1)
 
 
 main :: IO ()
 main = do
   putStrLn "example:"
   
-  
-  incrGlobalCounter
-  incrGlobalCounter
-  incrGlobalCounter
-  print =<< readGlobalCount
+  globalCounter <- newIORef 0
+  incrGlobalCounter globalCounter
+  incrGlobalCounter globalCounter
+  incrGlobalCounter globalCounter
+  print =<< readGlobalCount globalCounter
