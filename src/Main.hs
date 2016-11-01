@@ -5,15 +5,15 @@ import System.IO.Unsafe
 
 
 
-
-
-
+{-# NOINLINE globalCounter #-}
+globalCounter :: IORef Int
+globalCounter = unsafePerformIO $ newIORef 0
 
 readGlobalCount :: IO Int
-readGlobalCount = readIORef (unsafePerformIO $ newIORef 0)
+readGlobalCount = readIORef globalCounter
 
 incrGlobalCounter :: IO ()
-incrGlobalCounter = modifyIORef (unsafePerformIO $ newIORef 0) (+ 1)
+incrGlobalCounter = modifyIORef globalCounter (+ 1)
 
 
 main :: IO ()
