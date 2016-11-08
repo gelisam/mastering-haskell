@@ -1,21 +1,5 @@
+module Main where
 
 
-
-
-
-
-
-       -------------------------------------------------
-       --                                             --
-       --           Installation and Setup            --
-       --                                             --
-       --                         by Samuel Gélineau  --
-       --                         published by Packt  --
-       -------------------------------------------------
-
-
-
-
-
-
-
+main :: IO ()
+main = putStrLn "hello world"
