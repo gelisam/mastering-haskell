@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 
 executable course
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       Mutate
   build-depends:       base
                      , doctest
                      , free
