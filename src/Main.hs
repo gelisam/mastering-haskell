@@ -1,6 +1,6 @@
 module Main where
 
-putStrLn :: String -> Console ()
-getLine  :: Console String
+putStrLn :: String -> Logging ()
 
-
+runLogging :: Logging a -> Console a
+getLine    :: Console String
