@@ -1,16 +1,17 @@
 module Main where
 
-import Control.Monad
+data Statement = PutStrLn String deriving Show
+type Logging = [Statement]
 
+hello1 :: Logging
+hello1 = replicate 3 (PutStrLn "hello")
 
-hello1 :: IO ()
-hello1 = replicateM_ 3 (putStrLn "hello")
-
-hello2 :: IO ()
-hello2 = do
-    putStrLn "hello"
-    putStrLn "hello"
-    putStrLn "hello"
+hello2 :: Logging
+hello2 =
+  [ PutStrLn "hello"
+  , PutStrLn "hello"
+  , PutStrLn "hello"
+  ]
 
 
 
@@ -111,4 +112,4 @@ hello2 = do
 
 
 main :: IO ()
-main = hello1
+main = print hello1
