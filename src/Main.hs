@@ -1,18 +1,114 @@
 module Main where
 
-import Prelude hiding (getLine, putStrLn)
-
-import Console
+import Control.Monad
 
 
-echo :: Console ()
-echo = do
-  line <- getLine
-  runLogging $ putStrLn line
+hello1 :: IO ()
+hello1 = replicateM_ 3 (putStrLn "hello")
+
+hello2 :: IO ()
+hello2 = do
+    putStrLn "hello"
+    putStrLn "hello"
+    putStrLn "hello"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 main :: IO ()
-main = do
-  runConsole echo
-  runConsole echo
-  runConsole echo
+main = hello1
