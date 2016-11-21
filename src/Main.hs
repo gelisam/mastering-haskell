@@ -8,12 +8,12 @@ import Control.Monad.Trans.Writer
 
 -- |
 -- >>> runTesting ["line 1"] $ testConsole $ quiet echo
--- ((),["line 1"])
+-- ((),[])
 -- >>> runTesting ["line 1"] $ testConsole $ quiet getLineLength
 -- (6,[])
 quiet :: Console a -> Console a
 quiet (Return x) = Return x
-quiet (More (GetLine    cc)) = More (GetLine (fmap quiet cc))
+quiet (More (GetLine    cc)) = quiet (cc undefined)
 quiet (More (PutStrLn _ cc)) = quiet (cc ())
 
 
