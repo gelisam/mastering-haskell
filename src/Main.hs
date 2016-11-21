@@ -4,20 +4,20 @@ data ConsoleF a
   = GetLine         (String -> a)
   | PutStrLn String (()     -> a)
 
+data Console a
+  = Return a
+  | More (ConsoleF (Console a))
 
-
-
-
-getLineLength :: ConsoleF Int
+getLineLength :: Console Int
 getLineLength =
-    GetLine $ \line ->
-    length line
+    More $ GetLine $ \line ->
+    Return (length line)
 
-echo :: ConsoleF (ConsoleF ())
+echo :: Console ()
 echo =
-    GetLine $ \line ->
-    PutStrLn line $ \() ->
-    ()
+    More $ GetLine $ \line ->
+    More $ PutStrLn line $ \() ->
+    Return ()
 
 
 
