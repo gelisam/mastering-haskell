@@ -1,30 +1,27 @@
 module Main where
 
 import Prelude hiding (getLine, putStrLn)
-import qualified Prelude as P
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.State
+import Control.Monad.Trans.Writer
 
+type Testing = StateT [String] (Writer [String])
 
+runTesting :: [String] -> Testing a -> (a, [String])
+runTesting input = runWriter . flip evalStateT input
+
+testConsoleF :: ConsoleF a -> Testing a
+testConsoleF (GetLine    cc) = cc <$> state (\(s:ss) -> (s,ss))
+testConsoleF (PutStrLn s cc) = cc <$> lift (tell [s])
 
 -- |
--- >>> runConsoleF $ PutStrLn "hello" (\() -> 42)
--- hello
--- 42
-runConsoleF :: ConsoleF a -> IO a
-runConsoleF (GetLine    cc) = cc <$> P.getLine
-runConsoleF (PutStrLn s cc) = cc <$> P.putStrLn s
-
--- |
--- >>> import Control.Monad
--- >>> runConsole $ replicateM_ 3 (putStrLn "hello")
--- hello
--- hello
--- hello
-runConsole :: Console a -> IO a
-runConsole (Return x) = return x
-runConsole (More cc)  = runConsoleF cc >>= runConsole
-
-
-
+-- >>> runTesting ["line 1"] $ testConsole echo
+-- ((),["line 1"])
+-- >>> runTesting ["line 1"] $ testConsole getLineLength
+-- (6,[])
+testConsole :: Console a -> Testing a
+testConsole (Return x) = return x
+testConsole (More cc)  = testConsoleF cc >>= testConsole
 
 
 
