@@ -1,23 +1,23 @@
 module Main where
 
-data Statement
-  = GetLine
-  | PutStrLn String
-    deriving Show
-
-type Console = [Statement]
+data ConsoleF a
+  = GetLine         (String -> a)
+  | PutStrLn String (()     -> a)
 
 
-getLineLength :: Console
+
+
+
+getLineLength :: ConsoleF Int
 getLineLength =
-  [ GetLine
-  , undefined
-  ]
-echo :: Console
+    GetLine $ \line ->
+    length line
+
+echo :: ConsoleF (ConsoleF ())
 echo =
-  [ GetLine
-  , PutStrLn undefined
-  ]
+    GetLine $ \line ->
+    PutStrLn line $ \() ->
+    ()
 
 
 
