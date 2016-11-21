@@ -5,6 +5,47 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.State
 import Control.Monad.Trans.Writer
 
+
+-- |
+-- >>> runTesting ["line 1"] $ testConsole $ quiet echo
+-- ((),["line 1"])
+-- >>> runTesting ["line 1"] $ testConsole $ quiet getLineLength
+-- (6,[])
+quiet :: Console a -> Console a
+quiet (Return x) = Return x
+quiet (More (GetLine    cc)) = More (GetLine (fmap quiet cc))
+quiet (More (PutStrLn _ cc)) = quiet (cc ())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 type Testing = StateT [String] (Writer [String])
 
 runTesting :: [String] -> Testing a -> (a, [String])
@@ -14,11 +55,6 @@ testConsoleF :: ConsoleF a -> Testing a
 testConsoleF (GetLine    cc) = cc <$> state (\(s:ss) -> (s,ss))
 testConsoleF (PutStrLn s cc) = cc <$> lift (tell [s])
 
--- |
--- >>> runTesting ["line 1"] $ testConsole echo
--- ((),["line 1"])
--- >>> runTesting ["line 1"] $ testConsole getLineLength
--- (6,[])
 testConsole :: Console a -> Testing a
 testConsole (Return x) = return x
 testConsole (More cc)  = testConsoleF cc >>= testConsole
