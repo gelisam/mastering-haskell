@@ -1,23 +1,23 @@
 module Main where
 
+data Statement
+  = GetLine
+  | PutStrLn String
+    deriving Show
+
+type Console = [Statement]
 
 
-
-
-
-
-
-
-getLineLength :: IO Int
-getLineLength = do
-    line <- getLine
-    return (length line)
-
-echo :: IO ()
-echo = do
-    line <- getLine
-    putStrLn line
-
+getLineLength :: Console
+getLineLength =
+  [ GetLine
+  , undefined
+  ]
+echo :: Console
+echo =
+  [ GetLine
+  , PutStrLn undefined
+  ]
 
 
 
