@@ -1,11 +1,42 @@
 module Main where
 
 import Prelude hiding (getLine, putStrLn)
+import qualified Prelude as P
 
-instance Monad Console where
-  return = Return
-  Return x >>= f = f x
-  More cc  >>= f = More (fmap (>>= f) cc)
+
+
+-- |
+-- >>> runConsoleF $ PutStrLn "hello" (\() -> 42)
+-- hello
+-- 42
+runConsoleF :: ConsoleF a -> IO a
+runConsoleF (GetLine    cc) = cc <$> P.getLine
+runConsoleF (PutStrLn s cc) = cc <$> P.putStrLn s
+
+-- |
+-- >>> import Control.Monad
+-- >>> runConsole $ replicateM_ 3 (putStrLn "hello")
+-- hello
+-- hello
+-- hello
+runConsole :: Console a -> IO a
+runConsole (Return x) = return x
+runConsole (More cc)  = runConsoleF cc >>= runConsole
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 getLineLength :: Console Int
@@ -17,6 +48,8 @@ echo :: Console ()
 echo = do
     line <- getLine
     putStrLn line
+
+
 
 getLine :: Console String
 getLine = More (GetLine Return)
@@ -143,6 +176,10 @@ instance Applicative Console where
     x <- cx
     return (f x)
 
+instance Monad Console where
+  return = Return
+  Return x >>= f = f x
+  More cc  >>= f = More (fmap (>>= f) cc)
 
 
 main :: IO ()
