@@ -1,126 +1,119 @@
 module Main where
-import Control.Arrow
 import Control.Concurrent
-import Control.Exception.Base
+import Control.Exception
 import Control.Monad
-import Data.Typeable
+import System.IO hiding (withFile)
 import System.Timeout
 
 
+withFile :: FilePath -> IOMode -> (Handle -> IO a) -> IO a
+withFile filePath mode = bracket open close
+  where
+    open = openFile filePath mode
+    close h = do
+      hClose h
+      putStrLn "closed the file."
+
 -- |
--- >>> timeout 1000000 sleepForever
--- Nothing 
+-- >>> timeout 1000000 example
+-- closed the file.
+-- Nothing
+example :: IO a
+example = withFile "foo.txt" ReadMode (\h -> sleepForever)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 sleepForever :: IO a
 sleepForever = forever
              $ threadDelay 2000000
-
--- |
--- >>> timeout 1000000 uninterruptibleSleep
--- ...
-uninterruptibleSleep :: IO a
-uninterruptibleSleep = forever
-                     $ catchType $ threadDelay 2000000
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typeOfException :: SomeException -> TypeRep
-typeOfException (SomeException e) = typeOf e
-
-catchType :: IO a -> IO (Either TypeRep a)
-catchType = fmap (left typeOfException) . try
 
 
 -- prevent a warning about unsued System.Timeout
