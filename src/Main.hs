@@ -1,24 +1,27 @@
 module Main where
+import Control.Arrow
 import Control.Exception.Base
+import Data.Typeable
+
+
+typeOfException :: SomeException -> TypeRep
+typeOfException (SomeException e) = typeOf e
+
+catchType :: IO a -> IO (Either TypeRep a)
+catchType = fmap (left typeOfException) . try
 
 
 -- |
--- >>> example1
+-- >>> try example :: IO (Either ArithException Int)
 -- *** Exception: oops
-example1 :: IO Int
-example1 = throwIO $ AssertionFailed "oops"
-
--- |
--- >>> example2
+-- 
+-- >>> catchType example
+-- Left AssertionFailed
+-- 
+-- >>> try example :: IO (Either AssertionFailed Int)
 -- Left oops
-example2 :: IO (Either AssertionFailed a)
-example2 = try $ throwIO $ AssertionFailed "oops"
-
--- |
--- >>> example3
--- *** Exception: oops
-example3 :: IO (Either ArithException a)
-example3 = try $ throwIO $ AssertionFailed "oops"
+example :: IO Int
+example = throwIO $ AssertionFailed "oops"
 
 
 
