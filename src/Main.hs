@@ -1,16 +1,16 @@
 module Main where
 import Control.Concurrent
-import Control.Exception
 import Control.Monad
-import System.IO hiding (withFile)
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Resource
+import System.IO
 import System.Timeout
 
-
-withFile :: FilePath -> IOMode -> (Handle -> IO a) -> IO a
-withFile filePath mode = bracket open close
+acquireFile :: FilePath -> IOMode -> ResIO (ReleaseKey, Handle)
+acquireFile filePath mode = allocate open close
   where
-    open = openFile filePath mode
-    close h = do
+    open = liftIO $ openFile filePath mode
+    close h = liftIO $ do
       hClose h
       putStrLn "closed the file."
 
@@ -19,7 +19,9 @@ withFile filePath mode = bracket open close
 -- closed the file.
 -- Nothing
 example :: IO a
-example = withFile "foo.txt" ReadMode (\h -> sleepForever)
+example = runResourceT $ do
+  (releaseKey, h) <- acquireFile "foo.txt" ReadMode
+  liftIO sleepForever
 
 
 
