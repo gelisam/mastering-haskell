@@ -4,24 +4,23 @@ import Control.Exception.Base
 import Data.Typeable
 
 -- |
--- >>> catchType $ evaluate divByZero
--- Left ArithException
-divByZero :: Int
-divByZero = 1 `div` 0
+-- >>> catchType $ evaluate example1
+-- Left AssertionFailed
+example1 :: Int
+example1 = 1 + throw (AssertionFailed "oops")
 
 -- |
--- >>> catchType $ evaluate (buggySum [1,2,3])
--- Left PatternMatchFail
-buggySum :: [Int] -> Int
-buggySum (x:xs) = x + buggySum xs
-  -- [] case is missing
+-- >>> catchType $ evaluate example2
+-- Left ErrorCall
+example2 :: Int
+example2 = 1 + error "oops"
 
--- Only detected in compiled mode:
--- 
--- >>> catchType $ evaluate cyclic
--- Left NonTermination
-cyclic :: Int
-cyclic = 1 + cyclic
+-- |
+-- >>> catchType $ evaluate example3
+-- Left ErrorCall
+example3 :: Int
+example3 = 1 + undefined
+
 
 
 
