@@ -1,16 +1,16 @@
 module Main where
 import Data.Function
-
+import Debug.Trace
 
 source :: [Int]
-source = [1..100]
+source = map (\x -> trace ("source " ++ show x) x) [1..3]
 
 odds :: [Int] -> [Int]
-odds = filter odd
+odds = filter (\x -> trace ("filter " ++ show x) $ odd x)
 
 sink :: [Int] -> Int
-sink = sum
-
+sink []     = 0
+sink (x:xs) = trace ("sink " ++ show x) (x + sink xs)
 
 main :: IO ()
 main = do
