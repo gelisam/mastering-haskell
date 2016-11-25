@@ -1,36 +1,18 @@
+{-# LANGUAGE BangPatterns #-}
 module Main where
-import Prelude hiding (readFile)
-import Control.Exception
-import System.IO hiding (hGetContents, withFile, readFile)
-import System.IO.Unsafe
-
-hGetContents :: Handle -> IO String
-hGetContents h = do
-  r <- hIsEOF h
-  if r then do putStrLn "closing handle"
-               hClose h
-               return []
-       else do x <- hGetChar h
-               xs <- unsafeInterleaveIO $ hGetContents h
-               return (x:xs)
-
-readFile :: FilePath -> IO String
-readFile filePath = do h <- openFile filePath ReadMode
-                       hGetContents h
-
-withFile :: FilePath -> IOMode -> (Handle -> IO a) -> IO a
-withFile filePath mode = bracket acquire release
-  where acquire = openFile filePath mode
-        release h = do putStrLn "releasing handle"
-                       hClose h
-
-
-
-
-
-
-
-
+import System.IO
 
 main :: IO ()
-main = return ()
+main = do
+  writeFile "foo.txt" $ unlines $ map show [1..10000::Int]
+  
+  h <- openFile "foo.txt" ReadMode
+  let go :: Int -> Int -> IO Int
+      go 100 !acc = return acc
+      go n   !acc = do
+        r <- hIsEOF h
+        if r then return acc
+             else do x <- read <$> hGetLine h
+                     go (n+1) (if odd x then x+acc else acc)
+  r <- go 0 0
+  print r
