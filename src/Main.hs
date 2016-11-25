@@ -1,13 +1,18 @@
-{-# LANGUAGE BangPatterns #-}
 module Main where
-import Control.Exception
-import System.IO.Unsafe
+import Data.Function
+
+
+source :: [Int]
+source = [1..100]
+
+odds :: [Int] -> [Int]
+odds = filter odd
+
+sink :: [Int] -> Int
+sink = sum
+
 
 main :: IO ()
 main = do
-  s <- unsafeInterleaveIO $ throwIO (AssertionFailed "oops")
-  
-  putStrLn "reversing string"
-  let! s' = reverse s
-  
-  putStrLn "done"
+  let r = source & odds & sink
+  print r
