@@ -9,14 +9,16 @@ main = do
   writeFile "foo.txt" "abc"
   
   putStrLn "first test:"
-  s <- readFile "foo.txt"
-  print s
+  withFile "foo.txt" ReadMode $ \h -> do
+    s <- hGetContents h
+    print s
   
   putStrLn ""
   
   putStrLn "second test:"
-  s' <- readFile "foo.txt"
-  print (take 2 s')
+  withFile "foo.txt" ReadMode $ \h -> do
+    s <- hGetContents h
+    print (take 2 s)
 
 
 
