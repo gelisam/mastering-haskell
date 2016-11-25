@@ -1,23 +1,36 @@
 module Main where
+import Prelude hiding (readFile)
+import Control.Exception
+import System.IO hiding (hGetContents, withFile, readFile)
 import System.IO.Unsafe
-import Text.Printf
+
+hGetContents :: Handle -> IO String
+hGetContents h = do
+  r <- hIsEOF h
+  if r then do putStrLn "closing handle"
+               hClose h
+               return []
+       else do x <- hGetChar h
+               xs <- unsafeInterleaveIO $ hGetContents h
+               return (x:xs)
+
+readFile :: FilePath -> IO String
+readFile filePath = do h <- openFile filePath ReadMode
+                       hGetContents h
+
+withFile :: FilePath -> IOMode -> (Handle -> IO a) -> IO a
+withFile filePath mode = bracket acquire release
+  where acquire = openFile filePath mode
+        release h = do putStrLn "releasing handle"
+                       hClose h
 
 
-verboseSum :: Int -> Int -> Int
-verboseSum x y = unsafePerformIO $ do
-  printf "adding %d and %d\n" x y
-  return (x + y)
 
-generateVerboseProduct :: Int -> Int -> IO Int
-generateVerboseProduct x y = unsafeInterleaveIO $ do
-  printf "multiplying %d and %d\n" x y
-  return (x * y)
+
+
+
+
+
 
 main :: IO ()
-main = do
-  let x1 = verboseSum 6 7
-  let x2 = verboseSum 6 7
-  x3 <- generateVerboseProduct 6 7
-  x4 <- generateVerboseProduct 6 7
-  putStrLn "about to print"
-  print [x1, x2, x3, x4]
+main = return ()
