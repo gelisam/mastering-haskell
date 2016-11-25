@@ -8,17 +8,9 @@ main :: IO ()
 main = do
   writeFile "foo.txt" "abc"
   
-  putStrLn "first test:"
-  withFile "foo.txt" ReadMode $ \h -> do
-    s <- hGetContents h
-    print s
-  
-  putStrLn ""
-  
-  putStrLn "second test:"
-  withFile "foo.txt" ReadMode $ \h -> do
-    s <- hGetContents h
-    print (take 2 s)
+  s <- withFile "foo.txt" ReadMode $ \h -> do
+    hGetContents h
+  print s
 
 
 
