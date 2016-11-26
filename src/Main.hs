@@ -1,43 +1,24 @@
 module Main where
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.List
-import Control.Monad.Trans.State
-
-pytagoreanTriples :: ListT (State Bool) (Int,Int,Int)
-pytagoreanTriples = do
-  x <- oneOf [1..10]
-  y <- oneOf [x..10]
-  z <- oneOf [y..10]
-  guard (x*x + y*y == z*z)
-  _ <- lift toggle
-  return (x,y,z)
-
+import Control.Monad (when)
+import Data.List.Extra (wordsBy)
+import System.Environment (getArgs, getEnv)
+import System.Exit (exitSuccess)
+import Text.Printf (printf)
 
 main :: IO ()
 main = do
-  let (xs,flag) = runState (runListT pytagoreanTriples) False
-  putStrLn $ "found an " ++ if flag then "odd" else "even"
-                         ++ " number of triples:"
-  print xs
-
-
-
-
-
-
-
-
-
--- how does this not already exist??
-oneOf :: Monad m => [a] -> ListT m a
-oneOf []     = empty
-oneOf (x:xs) = return x <|> oneOf xs
-
-
-toggle :: Monad m => StateT Bool m Bool
-toggle = do
-  newState <- not <$> get
-  put newState
-  return newState
+  writeFile "foo.txt" "abc"
+  s <- readFile "foo.txt"
+  print s
+  
+  printf "four digits: %04d\n" (42 :: Int)
+  printf "four decimal places: %.4f\n" (pi :: Double)
+  
+  args <- getArgs
+  when (args == ["--help"]) $ putStrLn "usage: ..."
+  
+  paths <- wordsBy (== ':') <$> getEnv "PATH"
+  print $ last paths
+  
+  _ <- exitSuccess
+  print "never printed"
