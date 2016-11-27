@@ -25,6 +25,5 @@ executable course
                      , vector
                      , wreq
   hs-source-dirs:      src
-  c-sources:           src/Main.c
   default-language:    Haskell2010
   ghc-options: -W -Wall

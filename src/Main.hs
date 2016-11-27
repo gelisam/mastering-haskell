@@ -1,23 +1,23 @@
-{-# LANGUAGE QuasiQuotes, RankNTypes, TemplateHaskell #-}
 module Main where
-import Data.Word
+import Control.Concurrent as Concurrent
+import Foreign.Concurrent as Concurrent
 import Foreign
-import qualified Language.C.Inline as C
-C.include "<stdio.h>"
+import System.Mem
 
 main :: IO ()
 main = do
-  bytePtr <- mallocBytes 4
-  let rawPtr :: forall a. Ptr a
-      rawPtr = castPtr bytePtr
-  poke rawPtr (65535 :: Word32)
+  ptr <- mallocBytes 1024
+  let freePtr = do putStrLn $ "freeing " ++ show ptr
+                   free ptr
+  foreignPtr <- Concurrent.newForeignPtr ptr freePtr
   
-  bytes <- mapM (peekElemOff rawPtr) [0..3]
-  print (bytes :: [Word8])
   
-  [C.block| void {
-    unsigned char *p = $(unsigned char *rawPtr);
-    for(int i=0; i<4; ++i) printf("%d\n", p[i]);
-  }|]
+  performGC >> Concurrent.yield
   
-  free rawPtr
+  putStrLn $ "still referenced"
+  withForeignPtr foreignPtr $ flip poke (42 :: Int)
+  
+  
+  performGC >> Concurrent.yield
+  
+  putStrLn "no longer referenced"
