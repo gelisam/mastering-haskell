@@ -1,24 +1,13 @@
 module Main where
-import Control.Concurrent as Concurrent
-import Foreign
-import System.Mem
-import System.Mem.Weak
-import Data.IORef
+
+import System.Mem.StableName
+
 main :: IO ()
 main = do
-  ptr <- mallocBytes 1024
-  let freePtr = do putStrLn $ "freeing " ++ show ptr
-                   free ptr
-  ref <- newIORef ptr
-  weak <- mkWeakIORef ref freePtr
-  
-  performGC >> Concurrent.yield
-  
-  putStrLn $ "still referenced"
-  deRefWeak weak >>= traverse readIORef >>= print
-  poke ptr (42 :: Int) >> modifyIORef ref id
-  
-  performGC >> Concurrent.yield
-  
-  putStrLn "no longer referenced"
-  deRefWeak weak >>= traverse readIORef >>= print
+  let xs1 = [1..1000] :: [Int]
+  let xs2 = [1..500] ++ [501..1000] :: [Int]
+
+  name1 <- makeStableName xs1
+  name2 <- makeStableName xs2
+  print (name1 == name1, name1 == name2)
+  print (xs1 == xs1, xs1 == xs2)
