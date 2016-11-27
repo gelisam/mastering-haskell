@@ -1,22 +1,24 @@
-{-# LANGUAGE QuasiQuotes #-}
 module Main where
-import Control.Lens ((^.))
-import qualified Language.C.Inline as C
-import qualified Network.Wreq as Wreq
-import qualified System.Process as Process
+import Data.IORef
+import Data.Map as Map
+import Data.Unique as Unique
+import Graphics.UI.GLUT as GLUT
+import System.Random as Random
 
 main :: IO ()
 main = do
-  n <- [C.block| int {
-    int n = 1;
-    for(int i=0; i<10; ++i) {
-      n *= 2;
-    }
-    return n;
-  }|]
-  print n
+  ref <- newIORef Map.empty
   
-  _ <- Process.system "cowsay moo"
-  
-  response <- Wreq.get "http://httpbin.org/status/200"
-  print (response ^. Wreq.responseStatus)
+  _ <- GLUT.getArgsAndInitialize
+  _ <- GLUT.createWindow "GLUT demo"
+  GLUT.displayCallback $= callback ref
+  GLUT.keyboardCallback $= Just (\_ _ -> callback ref)
+  GLUT.mainLoop
+
+callback :: IORef (Map Unique Int) -> IO ()
+callback ref = do
+  map' <- Map.insert <$> Unique.newUnique
+                     <*> Random.randomRIO (1,6)
+                     <*> readIORef ref
+  writeIORef ref map'
+  print $ Map.elems map'
