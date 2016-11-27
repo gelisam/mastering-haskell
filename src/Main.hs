@@ -1,52 +1,23 @@
+{-# LANGUAGE QuasiQuotes, RankNTypes, TemplateHaskell #-}
 module Main where
-import Control.Monad
-import Data.Array
-import qualified Data.Vector as V
-
-type SquareMatrix a = Array (Int,Int) a
-
-identityMatrix :: Num a => Int -> SquareMatrix a
-identityMatrix n = listArray ((1,1), (n,n)) (repeat 0)
-                // [ ((i,i), 1) | i <- [1..n] ]
-
-
-
-
-
-squares :: Num a => V.Vector a
-squares = V.fromList $ (4:)
-                     $ (9:)
-                     $ (16:)
-                     $ (25:)
-                     $ []
-
-
-
-
-
-
-
-
-
-
-
-
+import Data.Word
+import Foreign
+import qualified Language.C.Inline as C
+C.include "<stdio.h>"
 
 main :: IO ()
 main = do
-  printSquareMatrix (identityMatrix 4 :: SquareMatrix Int)
-  printVector (squares :: V.Vector Int)
-
-
-printSquareMatrix :: Show a => SquareMatrix a -> IO ()
-printSquareMatrix arr = do
-  let ((i0,j0), (iZ,jZ)) = bounds arr
-  forM_ [j0..jZ] $ \j -> do
-    forM_ [i0..iZ] $ \i -> do
-      let x = arr ! (i,j)
-      putStr (show x)
-      putStr " "
-    putStrLn ""
-
-printVector :: Show a => V.Vector a -> IO ()
-printVector = print
+  bytePtr <- mallocBytes 4
+  let rawPtr :: forall a. Ptr a
+      rawPtr = castPtr bytePtr
+  poke rawPtr (65535 :: Word32)
+  
+  bytes <- mapM (peekElemOff rawPtr) [0..3]
+  print (bytes :: [Word8])
+  
+  [C.block| void {
+    unsigned char *p = $(unsigned char *rawPtr);
+    for(int i=0; i<4; ++i) printf("%d\n", p[i]);
+  }|]
+  
+  free rawPtr
