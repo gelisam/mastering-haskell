@@ -14,11 +14,11 @@ identityMatrix n = listArray ((1,1), (n,n)) (repeat 0)
 
 
 squares :: Num a => V.Vector a
-squares = V.fromList $ (4:) $ V.toList
-        $ V.fromList $ (9:) $ V.toList
-        $ V.fromList $ (16:) $ V.toList
-        $ V.fromList $ (25:) $ V.toList
-        $ V.fromList $ []
+squares = V.fromList $ (4:)
+                     $ (9:)
+                     $ (16:)
+                     $ (25:)
+                     $ []
 
 
 
