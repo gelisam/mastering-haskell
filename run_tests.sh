@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-stack install
+#stack install
 
 time ./scripts/run_tests_and_hang.sh "$@" &
 PID="$!"

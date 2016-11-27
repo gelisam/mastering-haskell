@@ -6,7 +6,7 @@ import System.Mem.Weak
 
 main :: IO ()
 main = do
-  ptr <- mallocBytes 1024
+  ptr@(Ptr addr) <- mallocBytes 1024
   let freePtr = do putStrLn $ "freeing " ++ show ptr
                    free ptr
   weak <- mkWeakPtr ptr (Just freePtr)
@@ -16,7 +16,7 @@ main = do
   
   putStrLn $ "still referenced"
   deRefWeak weak >>= print
-  poke ptr (42 :: Int)
+  pokeAddr addr (42 :: Int)
   
   performGC >> Concurrent.yield
   
