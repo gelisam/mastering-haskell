@@ -1,24 +1,22 @@
+{-# LANGUAGE QuasiQuotes #-}
 module Main where
-import Control.Monad (when)
-import Data.List.Extra (wordsBy)
-import System.Environment (getArgs, getEnv)
-import System.Exit (exitSuccess)
-import Text.Printf (printf)
+import Control.Lens ((^.))
+import qualified Language.C.Inline as C
+import qualified Network.Wreq as Wreq
+import qualified System.Process as Process
 
 main :: IO ()
 main = do
-  writeFile "foo.txt" "abc"
-  s <- readFile "foo.txt"
-  print s
+  n <- [C.block| int {
+    int n = 1;
+    for(int i=0; i<10; ++i) {
+      n *= 2;
+    }
+    return n;
+  }|]
+  print n
   
-  printf "four digits: %04d\n" (42 :: Int)
-  printf "four decimal places: %.4f\n" (pi :: Double)
+  _ <- Process.system "cowsay moo"
   
-  args <- getArgs
-  when (args == ["--help"]) $ putStrLn "usage: ..."
-  
-  paths <- wordsBy (== ':') <$> getEnv "PATH"
-  print $ last paths
-  
-  _ <- exitSuccess
-  print "never printed"
+  response <- Wreq.get "http://httpbin.org/status/200"
+  print (response ^. Wreq.responseStatus)
