@@ -7,7 +7,7 @@ foo = go 0
   where
     go acc []     = acc
     go acc (x:xs) = do
-      let !acc' = trace "add" $ acc + x
+      let acc' = trace "add" $ acc + x
       trace "recursive call" $ go acc' xs
 
 main :: IO ()
