@@ -1,12 +1,12 @@
-
+{-# LANGUAGE BangPatterns #-}
 module Main where
 
 
 foo :: Num a => [a] -> a
 foo = go 0
   where
-    go acc []     = acc
-    go acc (x:xs) = go (acc+x) xs
+    go !acc []     = acc
+    go !acc (x:xs) = go (acc+x) xs
 
 
 
