@@ -1,60 +1,14 @@
 
+module Main where
 
 
-
-
-
-
-
-
-
-        -------------------------------------------------
-        --                                             --
-        --  Introducing the Course                     --
-        --                                             --
-        --                         by Samuel Gélineau  --
-        --                         published by Packt  --
-        -------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+foo :: Num a => [a] -> a
+foo = go 0
+  where
+    go acc []     = acc
+    go acc (x:xs) = go (acc+x) xs
 
 
 
 main :: IO ()
-main = putStrLn "Welcome to the course!"
+main = print (foo [1..10] :: Int)
