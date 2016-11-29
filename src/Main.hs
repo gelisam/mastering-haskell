@@ -7,8 +7,15 @@ transform1 :: [Int] -> [Int]
 transform1 = map add100
 
 
+transform2 :: [Int] -> [Int]
+transform2 = filter even
 
 
+batchesOf :: Int -> [a] -> [[a]]
+batchesOf n xs = take n xs : batchesOf n (drop n xs)
+
+transform3 :: [Int] -> [[Int]]
+transform3 = batchesOf 5
 
 
 
@@ -35,4 +42,7 @@ sink xs = do
   putStrLn "..."
 
 main :: IO ()
-main = sink (transform1 source)
+main = do
+  sink (transform1 source)
+  sink (transform2 source)
+  sink (transform3 source)
