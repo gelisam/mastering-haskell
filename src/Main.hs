@@ -1,29 +1,27 @@
 module Main where
-
-add100 :: Int -> Int
-add100 = (+100)
-
-transform1 :: [Int] -> [Int]
-transform1 = map add100
+import Data.Void
 
 
-transform2 :: [Int] -> [Int]
-transform2 = filter even
+data TransformF u v a = Consume   (u  -> a)
+                      | Produce v (() -> a)
+data Transform u v a = Return a
+                     | More (TransformF u v (Transform u v a))
 
 
-batchesOf :: Int -> [a] -> [[a]]
-batchesOf n xs = take n xs : batchesOf n (drop n xs)
+consume :: Transform u v u
+consume = More (Consume Return)
 
-transform3 :: [Int] -> [[Int]]
-transform3 = batchesOf 5
-
-
-composed :: [Int] -> [Int]
-composed = map sum . batchesOf 5 . filter even
+produce :: v -> Transform u v ()
+produce v = More (Produce v Return)
 
 
-
-
+runTransform :: Transform u v Void -> [u] -> [v]
+runTransform (Return _)    = error "early return"
+runTransform (More xform)  = go xform
+  where
+    go (Consume   _ ) []     = error "early end of stream"
+    go (Consume   cc) (u:us) = runTransform (cc u) us
+    go (Produce v cc) us     = v : runTransform (cc ()) us
 
 
 
@@ -31,20 +29,26 @@ composed = map sum . batchesOf 5 . filter even
 
 
 
+instance Functor (TransformF u v) where
+  fmap f (Consume   cc) = Consume   (fmap f cc)
+  fmap f (Produce v cc) = Produce v (fmap f cc)
 
+instance Functor (Transform u v) where
+  fmap f (Return x) = Return (f x)
+  fmap f (More cc)  = More (fmap (fmap f) cc)
 
-source :: [Int]
-source = [0..]
+instance Applicative (Transform u v) where
+  pure = Return
+  cf <*> cx = do
+    f <- cf
+    x <- cx
+    return (f x)
 
-sink :: Show a => [a] -> IO ()
-sink xs = do
-  putStrLn ""
-  mapM_ print (take 5 xs)
-  putStrLn "..."
+instance Monad (Transform u v) where
+  return = Return
+  Return x >>= f = f x
+  More cc  >>= f = More (fmap (>>= f) cc)
+
 
 main :: IO ()
-main = do
-  sink (transform1 source)
-  sink (transform2 source)
-  sink (transform3 source)
-  sink (composed source)
+main = return ()
