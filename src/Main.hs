@@ -1,11 +1,22 @@
 module Main where
 import Control.Monad
 
+(|>) :: Transform u v a -> Transform v w a -> Transform u w a
+(|>) (Return _) _ = error "early return"
+(|>) _ (Return _) = error "early return"
+(|>) (More (Consume cc1)) t2 = do
+  u <- consume
+  cc1 u |> t2
+(|>) t1 (More (Produce w cc2)) = do
+  produce w
+  t1 |> cc2 ()
+(|>) (More (Produce v cc1)) (More (Consume cc2)) = do
+  cc1 () |> cc2 v
+
 composed :: Transform Int Int a
-composed = do
-  filterT even
-  batchesOf 5
-  mapT sum
+composed = filterT even
+        |> batchesOf 5
+        |> mapT sum
 
 
 
@@ -25,16 +36,18 @@ composed = do
 
 
 
-mapT :: ([Int] -> Int) -> Transform Int Int a
-mapT = undefined
+mapT :: (u -> v) -> Transform u v a
+mapT f = forever $ do
+  x <- consume
+  produce (f x)
   
-filterT :: (Int -> Bool) -> Transform Int Int a
+filterT :: (u -> Bool) -> Transform u u a
 filterT p = forever $ do
   x <- consume
   when (p x) $ produce x
 
-batchesOf :: Int -> Transform Int Int a
-batchesOf n = undefined
+batchesOf :: Int -> Transform u [u] a
+batchesOf n = forever $ replicateM n consume >>= produce
 
 
 data TransformF u v a = Consume   (u  -> a)
