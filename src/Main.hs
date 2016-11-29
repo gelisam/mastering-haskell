@@ -1,47 +1,40 @@
 module Main where
 import Control.Monad
 
-mapT :: (u -> v) -> Transform u v a
-mapT f = forever $ do
-  x <- consume
-  produce (f x)
+composed :: Transform Int Int a
+composed = do
+  filterT even
+  batchesOf 5
+  mapT sum
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mapT :: ([Int] -> Int) -> Transform Int Int a
+mapT = undefined
   
-filterT :: (u -> Bool) -> Transform u u a
+filterT :: (Int -> Bool) -> Transform Int Int a
 filterT p = forever $ do
   x <- consume
   when (p x) $ produce x
 
-batchesOf :: Int -> Transform u [u] a
-batchesOf n = forever $ replicateM n consume >>= produce
-
-
-transform1 :: Transform Int Int a
-transform1 = mapT (+100)
-
-transform2 :: Transform Int Int a
-transform2 = filterT even
-
-transform3 :: Transform Int [Int] a
-transform3 = batchesOf 5
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+batchesOf :: Int -> Transform Int Int a
+batchesOf n = undefined
 
 
 data TransformF u v a = Consume   (u  -> a)
@@ -102,6 +95,4 @@ sink xs = do
 
 main :: IO ()
 main = do
-  sink (runTransform transform1 source)
-  sink (runTransform transform2 source)
-  sink (runTransform transform3 source)
+  sink (runTransform composed source)
