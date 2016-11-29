@@ -18,7 +18,8 @@ transform3 :: [Int] -> [[Int]]
 transform3 = batchesOf 5
 
 
-
+composed :: [Int] -> [Int]
+composed = map sum . batchesOf 5 . filter even
 
 
 
@@ -46,3 +47,4 @@ main = do
   sink (transform1 source)
   sink (transform2 source)
   sink (transform3 source)
+  sink (composed source)
