@@ -1,42 +1,7 @@
+module Main where
 
-
-
-
-
-
-
-
-
-
-        -------------------------------------------------
-        --                                             --
-        --  Composing Finite and Infinite Streams      --
-        --                                             --
-        --                         by Samuel Gélineau  --
-        --                         published by Packt  --
-        --                                             --
-        -------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+type FList a = [a]
+data IList a = Cons a (IList a)
 
 
 
@@ -58,4 +23,4 @@
 
 
 main :: IO ()
-main = putStrLn "Welcome to the course!"
+main = return ()
