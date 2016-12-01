@@ -1,18 +1,26 @@
 module Main where
-
+import Prelude hiding (id, (.))
+import Control.Category
 import Control.Monad
 import Data.Void
-
 data TransformF u v a = Consume   (u  -> a)
                       | Produce v (() -> a)
 
 data Transform u v a = Return a
                      | More (TransformF u v (Transform u v a))
+newtype ITransform u v = ITransform (Transform u v Void)
 
-
-batchesOf :: Int -> Transform u [u] Void
-batchesOf n = forever $ replicateM n consume >>= produce
-
+instance Category ITransform where
+  id = ITransform $ forever $ consume >>= produce
+  ITransform t2 . ITransform t1 = ITransform $ go t1 t2
+    where
+      go (More (Consume cc1)) cc2   = do u <- consume
+                                         go (cc1 u) cc2
+      go cc1 (More (Produce w cc2)) = do produce w
+                                         go cc1 (cc2 ())
+      go (More (Produce v cc1)) (More (Consume cc2))
+                                    = go (cc1 ()) (cc2 v)
+      go _ _ = error "impossible case returning a Void"
 
 
 
