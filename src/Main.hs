@@ -1,23 +1,23 @@
 module Main where
+import Control.Arrow
 import Control.Monad
 
 batchesOf :: Int -> [a] -> [[a]]
-batchesOf n xs = take n xs : batchesOf n (drop n xs)
+batchesOf n xs = let (xs1, xs2) = splitAt n xs
+                 in  xs1 : batchesOf n xs2
+
+splitAtE :: Int -> EList u a -> EList v ([u], EList u a)
+splitAtE 0 cc                      = return ([], cc)
+splitAtE _ (ReturnE x)             = return ([], ReturnE x)
+splitAtE n (MoreE (EffectE mcc))   = do cc <- effectE mcc
+                                        splitAtE n cc
+splitAtE n (MoreE (ProduceE u cc)) = first (u:)
+                                 <$> splitAtE (n-1) (cc ())
 
 batchesOfE :: Int -> EList u a -> EList [u] a
-batchesOfE n = go n []
-  where
-    go 0 acc cc                      = do produceE acc
-                                          go n [] cc
-    go _ _   (ReturnE x)             = return x
-    go i acc (MoreE (EffectE mcc))   = do cc <- effectE mcc
-                                          go i acc cc
-    go i acc (MoreE (ProduceE u cc)) = go (i-1)
-                                          (acc ++ [u])
-                                          (cc ())
-
-
-
+batchesOfE n elist = do (us, cc) <- splitAtE n elist
+                        produceE us
+                        batchesOfE n cc
 
 
 transform :: EList Int a -> EList [Int] a
@@ -34,7 +34,7 @@ transform = batchesOfE 3
 
 
 mapE :: (u -> IO v) -> EList u a -> EList v a
-mapE _       (ReturnE x)             = ReturnE x
+mapE _       (ReturnE x)            = ReturnE x
 mapE convert (MoreE (EffectE mcc))   = do cc <- effectE mcc
                                           mapE convert cc
 mapE convert (MoreE (ProduceE u cc)) = do v <- effectE $ convert u
@@ -42,7 +42,7 @@ mapE convert (MoreE (ProduceE u cc)) = do v <- effectE $ convert u
                                           mapE convert (cc ())
 
 filterE :: (u -> IO Bool) -> EList u a -> EList u a
-filterE _     (ReturnE x)             = ReturnE x
+filterE _     (ReturnE x)            = ReturnE x
 filterE check (MoreE (EffectE mcc))   = do cc <- effectE mcc
                                            filterE check cc
 filterE check (MoreE (ProduceE u cc)) = do r <- effectE $ check u
@@ -108,8 +108,8 @@ sink elist = do
     go 10 elist
   where
     go :: Show u => Int -> EList u a -> IO ()
-    go 0 _                       = putStrLn "..."
-    go _ (ReturnE _)             = putStrLn "..."
+    go 0 _                      = putStrLn "..."
+    go _ (ReturnE _)            = putStrLn "..."
     go n (MoreE (EffectE mcc))   = do cc <- mcc
                                       go n cc
     go n (MoreE (ProduceE u cc)) = do print u
