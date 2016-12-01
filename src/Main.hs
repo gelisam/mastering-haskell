@@ -1,27 +1,33 @@
 module Main where
-import Prelude hiding (filter)
 import Control.Monad
 
-filter :: (u -> Bool) -> [u] -> [u]
-filter _ []     = []
-filter p (u:us) = (if p u then [u] else []) ++ filter p us
+batchesOf :: Int -> [a] -> [[a]]
+batchesOf n xs = take n xs : batchesOf n (drop n xs)
 
-filterE :: (u -> IO Bool) -> EList u a -> EList u a
-filterE _     (ReturnE x)             = ReturnE x
-filterE check (MoreE (EffectE mcc))   = do cc <- effectE mcc
-                                           filterE check cc
-filterE check (MoreE (ProduceE u cc)) = do r <- effectE $ check u
-                                           when r $ produceE u
-                                           filterE check (cc ())
+batchesOfE :: Int -> EList u a -> EList [u] a
+batchesOfE n = go n []
+  where
+    go 0 acc cc                      = do produceE acc
+                                          go n [] cc
+    go _ _   (ReturnE x)             = return x
+    go i acc (MoreE (EffectE mcc))   = do cc <- effectE mcc
+                                          go i acc cc
+    go i acc (MoreE (ProduceE u cc)) = go (i-1)
+                                          (acc ++ [u])
+                                          (cc ())
 
 
-evenIO :: Int -> IO Bool
-evenIO x = if even x then return True
-                     else do putStrLn $ "skipping " ++ show x
-                             return False
 
-transform :: EList Int a -> EList Int a
-transform = filterE evenIO
+
+
+transform :: EList Int a -> EList [Int] a
+transform = batchesOfE 3
+
+
+
+
+
+
 
 
 
@@ -35,7 +41,13 @@ mapE convert (MoreE (ProduceE u cc)) = do v <- effectE $ convert u
                                           produceE v
                                           mapE convert (cc ())
 
-
+filterE :: (u -> IO Bool) -> EList u a -> EList u a
+filterE _     (ReturnE x)             = ReturnE x
+filterE check (MoreE (EffectE mcc))   = do cc <- effectE mcc
+                                           filterE check cc
+filterE check (MoreE (ProduceE u cc)) = do r <- effectE $ check u
+                                           when r $ produceE u
+                                           filterE check (cc ())
 
 
 data EListF u a = EffectE (IO a)
@@ -104,4 +116,4 @@ sink elist = do
                                       go (n-1) (cc ())
 
 main :: IO ()
-main = sink (transform source)
+main = sink (batchesOfE 3 source)
