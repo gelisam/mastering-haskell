@@ -1,26 +1,15 @@
 module Main where
-import Prelude hiding (id, (.))
-import Control.Category
 
-(|>) :: FTransform u v a -> FTransform v w a -> FTransform u w a
-ReturnF x             |> _                     = return x
-_                     |> ReturnF x             = return x
-MoreF (Consume cc1)   |> t2                    = do u <- consume
-                                                    cc1 u |> t2
-t1                    |> MoreF (Produce w cc2) = do produce w
-                                                    t1 |> cc2 ()
-MoreF (Produce v cc1) |> MoreF (Consume   cc2) = cc1 () |> cc2 v
+instance Monad (FTransform u v) where
+  return = ReturnF
+  ReturnF x >>= f = f x
+  MoreF cc  >>= f = MoreF (fmap (>>= f) cc)
 
-instance Category ITransform where
-  id = MoreI $ Consume $ \u ->
-       MoreI $ Produce u $ \() ->
-       id
-  t2 . MoreI (Consume cc1) =
-    MoreI $ Consume $ \u -> t2 . (cc1 u)
-  MoreI (Produce w cc2) . t1 =
-    MoreI $ Produce w $ \() -> cc2 () . t1
-  MoreI (Consume cc2) . MoreI (Produce v cc1) =
-    cc2 v . cc1 ()
+appendI :: ITransform u v -> ITransform u v -> ITransform u v
+appendI (MoreI (Consume   cc1)) cc2 = MoreI $ Consume $ \u ->
+                                      appendI (cc1 u) cc2
+appendI (MoreI (Produce v cc1)) cc2 = MoreI $ Produce v $ \() ->
+                                      appendI (cc1 ()) cc2
 
 
 
@@ -106,10 +95,6 @@ instance Applicative (FTransform u v) where
     x <- cx
     return (f x)
 
-instance Monad (FTransform u v) where
-  return = ReturnF
-  ReturnF x >>= f = f x
-  MoreF cc  >>= f = MoreF (fmap (>>= f) cc)
 
 
 main :: IO ()
