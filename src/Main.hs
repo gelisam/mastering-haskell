@@ -1,7 +1,7 @@
 module Main where
 
 
-
+import Data.Void
 
 data TransformF u v a = Consume   (u  -> a)
                       | Produce v (() -> a)
@@ -10,7 +10,16 @@ data Transform u v a = Return a
                      | More (TransformF u v (Transform u v a))
 
 
-
+(|>) :: Transform u v Void
+     -> Transform v w Void
+     -> Transform u w Void
+Return bottom        |> _                    = absurd bottom
+_                    |> Return bottom        = absurd bottom
+More (Consume cc1)   |> t2                   = do u <- consume
+                                                  cc1 u |> t2
+t1                   |> More (Produce w cc2) = do produce w
+                                                  t1 |> cc2 ()
+More (Produce v cc1) |> More (Consume   cc2) = cc1 () |> cc2 v
 
 
 
