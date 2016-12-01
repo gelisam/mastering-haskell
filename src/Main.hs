@@ -6,9 +6,10 @@ module Main where
 data TransformF u v a = Consume   (u  -> a)
                       | Produce v (() -> a)
 
-data FTransform u v a = ReturnF a
-                      | MoreF (TransformF u v (FTransform u v a))
-data ITransform u v   = MoreI (TransformF u v (ITransform u v))
+data Transform u v a = Return a
+                     | More (TransformF u v (Transform u v a))
+
+
 
 
 
@@ -40,28 +41,28 @@ instance Functor (TransformF u v) where
 
 
 
-consumeF :: FTransform u v u
-consumeF = MoreF (Consume ReturnF)
+consume :: Transform u v u
+consume = More (Consume Return)
 
-produceF :: v -> FTransform u v ()
-produceF v = MoreF (Produce v ReturnF)
+produce :: v -> Transform u v ()
+produce v = More (Produce v Return)
 
 
-instance Functor (FTransform u v) where
-  fmap f (ReturnF x) = ReturnF (f x)
-  fmap f (MoreF cc)  = MoreF (fmap (fmap f) cc)
+instance Functor (Transform u v) where
+  fmap f (Return x) = Return (f x)
+  fmap f (More cc)  = More (fmap (fmap f) cc)
 
-instance Applicative (FTransform u v) where
-  pure = ReturnF
+instance Applicative (Transform u v) where
+  pure = Return
   cf <*> cx = do
     f <- cf
     x <- cx
     return (f x)
 
-instance Monad (FTransform u v) where
-  return = ReturnF
-  ReturnF x >>= f = f x
-  MoreF cc  >>= f = MoreF (fmap (>>= f) cc)
+instance Monad (Transform u v) where
+  return = Return
+  Return x >>= f = f x
+  More cc  >>= f = More (fmap (>>= f) cc)
 
 
 main :: IO ()
