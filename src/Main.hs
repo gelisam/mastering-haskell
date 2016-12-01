@@ -1,9 +1,31 @@
 module Main where
-import Prelude hiding (map)
+import Prelude hiding (filter)
+import Control.Monad
 
-map :: (u -> v) -> [u] -> [v]
-map _ []     = []
-map f (u:us) = f u : map f us
+filter :: (u -> Bool) -> [u] -> [u]
+filter _ []     = []
+filter p (u:us) = (if p u then [u] else []) ++ filter p us
+
+filterE :: (u -> IO Bool) -> EList u a -> EList u a
+filterE _     (ReturnE x)             = ReturnE x
+filterE check (MoreE (EffectE mcc))   = do cc <- effectE mcc
+                                           filterE check cc
+filterE check (MoreE (ProduceE u cc)) = do r <- effectE $ check u
+                                           when r $ produceE u
+                                           filterE check (cc ())
+
+
+evenIO :: Int -> IO Bool
+evenIO x = if even x then return True
+                     else do putStrLn $ "skipping " ++ show x
+                             return False
+
+transform :: EList Int a -> EList Int a
+transform = filterE evenIO
+
+
+
+
 
 mapE :: (u -> IO v) -> EList u a -> EList v a
 mapE _       (ReturnE x)             = ReturnE x
@@ -12,16 +34,6 @@ mapE convert (MoreE (EffectE mcc))   = do cc <- effectE mcc
 mapE convert (MoreE (ProduceE u cc)) = do v <- effectE $ convert u
                                           produceE v
                                           mapE convert (cc ())
-
-
-addIO :: Int -> Int -> IO Int
-addIO x y = do putStrLn $ "add " ++ show x ++ " and " ++ show y
-               return $ x + y
-
-transform :: EList Int a -> EList Int a
-transform = mapE (addIO 100)
-
-
 
 
 
