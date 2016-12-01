@@ -3,13 +3,12 @@ module Main where
 type FList a = [a]
 data IList a = Cons a (IList a)
 
-zipF :: FList a -> FList b -> FList (a,b)
-zipF []     _      = []
-zipF _      []     = []
-zipF (x:xs) (y:ys) = (x,y) : zipF xs ys
+appendF :: FList a -> FList a -> FList a
+appendF []     xs' = xs'
+appendF (x:xs) xs' = x : appendF xs xs'
 
-zipI :: IList a -> IList b -> IList (a,b)
-zipI (Cons x xs) (Cons y ys) = (x,y) `Cons` zipI xs ys
+appendI :: IList a -> IList a -> IList a
+appendI (Cons x xs) xs' = x `Cons` appendI xs xs'
 
 
 
