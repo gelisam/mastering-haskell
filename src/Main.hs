@@ -1,27 +1,27 @@
 module Main where
-import Control.Arrow
 import Control.Monad
+import Data.Void
 
-batchesOf :: Int -> [a] -> [[a]]
-batchesOf n xs = let (xs1, xs2) = splitAt n xs
-                 in  xs1 : batchesOf n xs2
+runTransform :: Transform u v Void -> EList u a -> EList v a
+runTransform (Return bottom) _             = absurd bottom
+runTransform _               (ReturnE x)   = return x
+runTransform (More xform)    (MoreE elist) = go xform elist
+  where
+    go (Produce v ccT) ccE = do
+      produceE v
+      runTransform (ccT ()) (MoreE ccE)
+    go ccT             (EffectE mccE) = do
+      ccE <- effectE mccE
+      runTransform (More ccT) ccE
+    go (Consume ccT) (ProduceE u ccE) = do
+      runTransform (ccT u) (ccE ())
 
-splitAtE :: Int -> EList u a -> EList v ([u], EList u a)
-splitAtE 0 cc                      = return ([], cc)
-splitAtE _ (ReturnE x)             = return ([], ReturnE x)
-splitAtE n (MoreE (EffectE mcc))   = do cc <- effectE mcc
-                                        splitAtE n cc
-splitAtE n (MoreE (ProduceE u cc)) = first (u:)
-                                 <$> splitAtE (n-1) (cc ())
+
+batchesOf :: Int -> Transform u [u] a
+batchesOf n = forever $ replicateM n consume >>= produce
 
 batchesOfE :: Int -> EList u a -> EList [u] a
-batchesOfE n elist = do (us, cc) <- splitAtE n elist
-                        produceE us
-                        batchesOfE n cc
-
-
-transform :: EList Int a -> EList [Int] a
-transform = batchesOfE 3
+batchesOfE n = runTransform (batchesOf n)
 
 
 
@@ -33,21 +33,50 @@ transform = batchesOfE 3
 
 
 
-mapE :: (u -> IO v) -> EList u a -> EList v a
-mapE _       (ReturnE x)            = ReturnE x
-mapE convert (MoreE (EffectE mcc))   = do cc <- effectE mcc
-                                          mapE convert cc
-mapE convert (MoreE (ProduceE u cc)) = do v <- effectE $ convert u
-                                          produceE v
-                                          mapE convert (cc ())
 
-filterE :: (u -> IO Bool) -> EList u a -> EList u a
-filterE _     (ReturnE x)            = ReturnE x
-filterE check (MoreE (EffectE mcc))   = do cc <- effectE mcc
-                                           filterE check cc
-filterE check (MoreE (ProduceE u cc)) = do r <- effectE $ check u
-                                           when r $ produceE u
-                                           filterE check (cc ())
+
+
+
+
+
+
+
+
+
+data TransformF u v a = Consume   (u  -> a)
+                      | Produce v (() -> a)
+data Transform u v a = Return a
+                     | More (TransformF u v (Transform u v a))
+
+
+consume :: Transform u v u
+consume = More (Consume Return)
+
+produce :: v -> Transform u v ()
+produce v = More (Produce v Return)
+
+
+instance Functor (TransformF u v) where
+  fmap f (Consume   cc) = Consume   (fmap f cc)
+  fmap f (Produce v cc) = Produce v (fmap f cc)
+
+instance Functor (Transform u v) where
+  fmap f (Return x) = Return (f x)
+  fmap f (More cc)  = More (fmap (fmap f) cc)
+
+instance Applicative (Transform u v) where
+  pure = Return
+  cf <*> cx = do
+    f <- cf
+    x <- cx
+    return (f x)
+
+instance Monad (Transform u v) where
+  return = Return
+  Return x >>= f = f x
+  More cc  >>= f = More (fmap (>>= f) cc)
+
+
 
 
 data EListF u a = EffectE (IO a)
@@ -108,8 +137,8 @@ sink elist = do
     go 10 elist
   where
     go :: Show u => Int -> EList u a -> IO ()
-    go 0 _                      = putStrLn "..."
-    go _ (ReturnE _)            = putStrLn "..."
+    go 0 _                       = putStrLn "..."
+    go _ (ReturnE _)             = putStrLn "..."
     go n (MoreE (EffectE mcc))   = do cc <- mcc
                                       go n cc
     go n (MoreE (ProduceE u cc)) = do print u
