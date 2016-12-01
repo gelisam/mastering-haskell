@@ -8,6 +8,18 @@ data FTransform u v a = ReturnF a
 data ITransform u v   = MoreI (TransformF u v (ITransform u v))
 
 
+runFTransform :: FTransform u v a -> IList u -> (FList v, a)
+runFTransform (ReturnF x)            _           = ([], x)
+runFTransform (MoreF (Consume   cc)) (Cons u us) = (vs, x)
+  where (vs, x) = runFTransform (cc u) us
+runFTransform (MoreF (Produce v cc)) us          = (v:vs, x)
+  where (vs, x) = runFTransform (cc ()) us
+
+runITransform :: ITransform u v -> IList u -> IList v
+runITransform (MoreI (Consume   cc)) (Cons u us) = vs
+  where vs = runITransform (cc u) us
+runITransform (MoreI (Produce v cc)) us          = v `Cons` vs
+  where vs = runITransform (cc ()) us
 
 
 
