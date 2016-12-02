@@ -2,32 +2,41 @@ module Main where
 
 import Data.Void
 
+
+runForever :: IO u
+           -> (v -> IO ())
+           -> Transform u v Void
+           -> IO ()
+runForever _         _         (Return bottom) = absurd bottom
+runForever consumeIO produceIO (More t)        = case t of
+    Consume cc   -> do u <- consumeIO
+                       runForever consumeIO produceIO (cc u)
+    Produce v cc -> do produceIO v
+                       runForever consumeIO produceIO (cc ())
+    Effect mcc   -> do cc <- mcc
+                       runForever consumeIO produceIO cc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 data TransformF u v a = Consume   (u  -> a)
                       | Produce v (() -> a)
                       | Effect (IO a)
 
 data Transform u v a = Return a
                      | More (TransformF u v (Transform u v a))
-
-
-runTransform :: Transform u v Void
-             -> IList u
-             -> IO (IList v)
-runTransform = undefined
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 type FList a = [a]
