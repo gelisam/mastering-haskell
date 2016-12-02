@@ -3,22 +3,15 @@ module Main where
 import Data.Void
 
 
-runForever :: IO u
-           -> (v -> IO ())
-           -> Transform u v Void
-           -> IO ()
-runForever = undefined
-
-pull :: IO u
-     -> Transform u v Void
-     -> IO (v, Transform u v Void)
-pull = undefined
-
-push :: u -> (v -> IO ())
-     -> Transform u v Void
-     -> IO (Transform u v Void)
-push = undefined
-
+nextCmd :: Transform u v Void
+        -> IO (Either (u -> Transform u v Void)
+                      (v, Transform u v Void))
+nextCmd (Return bottom) = absurd bottom
+nextCmd (More t)        = case t of
+    Consume cc   -> return $ Left cc
+    Produce v cc -> return $ Right (v, cc ())
+    Effect mcc   -> do cc <- mcc
+                       nextCmd cc
 
 
 
