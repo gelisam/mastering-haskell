@@ -1,22 +1,31 @@
 module Main where
 import Control.Arrow
 import Control.Monad
+import Data.Void
 
-evenIO :: Int -> IO Bool
-evenIO x = do
-  if even x
-  then return True
-  else do putStrLn $ "skipping " ++ show x
-          return False
+newtype IEList u = IEList (EList u Void)
 
-sumIO :: [Int] -> IO Int
-sumIO xs = do
-  putStrLn $ "computing the sum of " ++ show xs
-  return $ sum xs
+instance Functor IEList where
+  fmap f (IEList us) = IEList $ mapE (return . f) us
+
+instance Applicative IEList where
+  pure x = IEList $ forever $ produceE x
+  IEList fs <*> IEList xs = IEList $ go fs xs
+    where
+      go (ReturnE bottom) _         = absurd bottom
+      go _ (ReturnE bottom)         = absurd bottom
+      go (MoreE (EffectE mccf)) ccx = do ccf <- effectE mccf
+                                         go ccf ccx
+      go ccf (MoreE (EffectE mccx)) = do ccx <- effectE mccx
+                                         go ccf ccx
+      go (MoreE (ProduceE f ccf))
+         (MoreE (ProduceE x ccx))   = do produceE (f x)
+                                         go (ccf ()) (ccx ())
 
 
-composed :: EList Int a -> EList Int a
-composed = mapE sumIO . batchesOfE 3 . filterE evenIO
+
+
+
 
 
 
@@ -32,6 +41,9 @@ mapE convert (MoreE (EffectE mcc))   = do cc <- effectE mcc
 mapE convert (MoreE (ProduceE u cc)) = do v <- effectE $ convert u
                                           produceE v
                                           mapE convert (cc ())
+
+filterIE :: (u -> IO Bool) -> IEList u -> IEList u
+filterIE check (IEList elist) = IEList $ filterE check elist
 
 filterE :: (u -> IO Bool) -> EList u a -> EList u a
 filterE _     (ReturnE x)            = ReturnE x
@@ -107,11 +119,14 @@ instance Monad (EList u) where
   MoreE cc  >>= f = MoreE (fmap (>>= f) cc)
 
 
-source :: EList Int ()
-source = mapM_ produceE [0..]
+source :: IEList Int
+source = IEList $ mapM_ go [0..] >> undefined
+  where
+    go i = do effectE $ putStrLn $ "generating " ++ show i
+              produceE i
 
-sink :: Show u => EList u a -> IO ()
-sink elist = do
+sink :: Show u => IEList u -> IO ()
+sink (IEList elist) = do
     putStrLn ""
     go 5 elist
   where
@@ -123,5 +138,13 @@ sink elist = do
     go n (MoreE (ProduceE u cc)) = do print u
                                       go (n-1) (cc ())
 
+checkIO :: Show a => (a -> Bool) -> a -> IO Bool
+checkIO p x = do
+  if p x
+  then return True
+  else do putStrLn $ "skipping " ++ show x
+          return False
+
 main :: IO ()
-main = sink (composed source)
+main = sink $ (,) <$> filterIE (checkIO (/= 2)) source
+                  <*> filterIE (checkIO (/= 4)) source
