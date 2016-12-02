@@ -12,7 +12,7 @@ data Transform u v a = Return a
 
 runTransform :: Transform u v Void
              -> IList u
-             -> IList v
+             -> IO (IList v)
 runTransform = undefined
 
 
