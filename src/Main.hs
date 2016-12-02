@@ -3,18 +3,16 @@ module Main where
 import Data.Void
 
 
-runForever :: IO u
-           -> (v -> IO ())
-           -> Transform u v Void
-           -> IO ()
-runForever _         _         (Return bottom) = absurd bottom
-runForever consumeIO produceIO (More t)        = case t of
+pull :: IO u
+     -> Transform u v Void
+     -> IO (v, Transform u v Void)
+pull _         (Return bottom) = absurd bottom
+pull consumeIO (More t)        = case t of
     Consume cc   -> do u <- consumeIO
-                       runForever consumeIO produceIO (cc u)
-    Produce v cc -> do produceIO v
-                       runForever consumeIO produceIO (cc ())
+                       pull consumeIO (cc u)
+    Produce v cc -> return (v, cc ())
     Effect mcc   -> do cc <- mcc
-                       runForever consumeIO produceIO cc
+                       pull consumeIO cc
 
 
 
