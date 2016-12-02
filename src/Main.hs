@@ -1,21 +1,18 @@
 module Main where
 
 
-data TransformF u v a = Effect (IO a)
-                      | Produce v (() -> a)
-                      | Consume   (u  -> a)
-data Transform u v a = Return a
-                     | More (TransformF u v (Transform u v a))
+data EListF u a = EffectE (IO a)
+                | ProduceE u (() -> a)
+
+data EList u a = ReturnE a
+               | MoreE (EListF u (EList u a))
 
 
-effect :: IO a -> Transform u v a
-effect mx = More (Effect (fmap Return mx))
+effectE :: IO a -> EList u a
+effectE mx = MoreE (EffectE (fmap ReturnE mx))
 
-produce :: v -> Transform u v ()
-produce v = More (Produce v Return)
-
-consume :: Transform u v u
-consume = More (Consume Return)
+produceE :: u -> EList u ()
+produceE u = MoreE (ProduceE u ReturnE)
 
 
 
@@ -24,42 +21,43 @@ consume = More (Consume Return)
 
 
 
-runTransform :: IO u -> (v -> IO ()) -> Transform u v a -> IO a
-runTransform consumeIO produceIO = go
+
+
+
+runEList :: EList u a -> (u -> IO ()) -> IO a
+runEList (ReturnE x)    _      = return x
+runEList (MoreE eListF) handle = go eListF
   where
-    go (Return x)            = return x
-    go (More (Effect   mcc)) = do cc <- mcc
-                                  go cc
-    go (More (Produce v cc)) = do produceIO v
-                                  go (cc ())
-    go (More (Consume   cc)) = do u <- consumeIO
-                                  go (cc u)
+    go (EffectE   mcc) = do cc <- mcc
+                            runEList cc handle
+    go (ProduceE v cc) = do handle v
+                            runEList (cc ()) handle
 
 
 
 
 
 
-instance Functor (TransformF u v) where
-  fmap f (Effect   mcc) = Effect    (fmap f mcc)
-  fmap f (Produce v cc) = Produce v (fmap f cc)
-  fmap f (Consume   cc) = Consume   (fmap f cc)
 
-instance Functor (Transform u v) where
-  fmap f (Return x) = Return (f x)
-  fmap f (More cc)  = More (fmap (fmap f) cc)
+instance Functor (EListF u) where
+  fmap f (EffectE mcc)   = EffectE (fmap f mcc)
+  fmap f (ProduceE v cc) = ProduceE v (fmap f cc)
 
-instance Applicative (Transform u v) where
-  pure = Return
+instance Functor (EList u) where
+  fmap f (ReturnE x) = ReturnE (f x)
+  fmap f (MoreE cc)  = MoreE (fmap (fmap f) cc)
+
+instance Applicative (EList u) where
+  pure = ReturnE
   cf <*> cx = do
     f <- cf
     x <- cx
     return (f x)
 
-instance Monad (Transform u v) where
-  return = Return
-  Return x >>= f = f x
-  More cc  >>= f = More (fmap (>>= f) cc)
+instance Monad (EList u) where
+  return = ReturnE
+  ReturnE x >>= f = f x
+  MoreE cc  >>= f = MoreE (fmap (>>= f) cc)
 
 
 main :: IO ()
