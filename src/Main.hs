@@ -1,16 +1,23 @@
 module Main where
-import Control.Monad
+
 import Data.Void
 
 
-lockStep :: Transform u v Void
-         -> u
-         -> IO (v, Transform u v Void)
-lockStep = undefined
+runForever :: IO u
+           -> (v -> IO ())
+           -> Transform u v Void
+           -> IO ()
+runForever = undefined
 
+pull :: IO u
+     -> Transform u v Void
+     -> IO (v, Transform u v Void)
+pull = undefined
 
-batchesOf :: Int -> Transform u [u] Void
-batchesOf n = forever $ replicateM n consume >>= produce
+push :: u -> (v -> IO ())
+     -> Transform u v Void
+     -> IO (Transform u v Void)
+push = undefined
 
 
 
