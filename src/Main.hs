@@ -1,27 +1,19 @@
 module Main where
 
 import Data.Void
-import Data.IORef
 
-pull :: IO u
+
+push :: u
+     -> (v -> IO ())
      -> Transform u v Void
-     -> IO (v, Transform u v Void)
-pull _         (Return bottom) = absurd bottom
-pull consumeIO (More t)        = case t of
-    Consume cc   -> do u <- consumeIO
-                       pull consumeIO (cc u)
-    Produce v cc -> return (v, cc ())
+     -> IO (Transform u v Void)
+push _  _         (Return bottom) = absurd bottom
+push u0 produceIO (More t)        = case t of
+    Consume cc   -> return (cc u0)
+    Produce v cc -> do produceIO v
+                       push u0 produceIO (cc ())
     Effect mcc   -> do cc <- mcc
-                       pull consumeIO cc
-
-toPull :: Transform u v Void -> IO (PTransform u v)
-toPull t0 = do
-  ref <- newIORef t0
-  return $ PTransform $ \pullU -> do
-    t <- readIORef ref
-    (v, t') <- pull pullU t
-    writeIORef ref t'
-    return v
+                       push u0 produceIO cc
 
 
 
@@ -33,10 +25,6 @@ toPull t0 = do
 
 
 
-
-newtype PTransform u v = PTransform
-  { onPull :: IO u -> IO v
-  }
 
 
 
