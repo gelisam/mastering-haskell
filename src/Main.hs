@@ -1,26 +1,21 @@
 module Main where
-
+import Control.Monad
 import Data.Void
 
 
-push :: u
-     -> (v -> IO ())
-     -> Transform u v Void
-     -> IO (Transform u v Void)
-push _  _         (Return bottom) = absurd bottom
-push u0 produceIO (More t)        = case t of
-    Consume cc   -> push' (cc u0)
-    Produce v cc -> do produceIO v
-                       push u0 produceIO (cc ())
-    Effect mcc   -> do cc <- mcc
-                       push u0 produceIO cc
-  where
-    push' (Return bottom)       = absurd bottom
-    push' (More (Produce v cc)) = do produceIO v
-                                     push' (cc ())
-    push' (More (Effect   mcc)) = do cc <- mcc
-                                     push' cc
-    push' cc                    = return cc
+lockStep :: Transform u v Void
+         -> u
+         -> IO (v, Transform u v Void)
+lockStep = undefined
+
+
+batchesOf :: Int -> Transform u [u] Void
+batchesOf n = forever $ replicateM n consume >>= produce
+
+
+
+
+
 
 
 
