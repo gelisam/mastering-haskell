@@ -9,14 +9,18 @@ push :: u
      -> IO (Transform u v Void)
 push _  _         (Return bottom) = absurd bottom
 push u0 produceIO (More t)        = case t of
-    Consume cc   -> return (cc u0)
+    Consume cc   -> push' (cc u0)
     Produce v cc -> do produceIO v
                        push u0 produceIO (cc ())
     Effect mcc   -> do cc <- mcc
                        push u0 produceIO cc
-
-
-
+  where
+    push' (Return bottom)       = absurd bottom
+    push' (More (Produce v cc)) = do produceIO v
+                                     push' (cc ())
+    push' (More (Effect   mcc)) = do cc <- mcc
+                                     push' cc
+    push' cc                    = return cc
 
 
 
