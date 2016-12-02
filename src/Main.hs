@@ -1,7 +1,7 @@
 module Main where
 
 import Data.Void
-
+import Data.IORef
 
 pull :: IO u
      -> Transform u v Void
@@ -14,6 +14,14 @@ pull consumeIO (More t)        = case t of
     Effect mcc   -> do cc <- mcc
                        pull consumeIO cc
 
+toPull :: Transform u v Void -> IO (PTransform u v)
+toPull t0 = do
+  ref <- newIORef t0
+  return $ PTransform $ \pullU -> do
+    t <- readIORef ref
+    (v, t') <- pull pullU t
+    writeIORef ref t'
+    return v
 
 
 
@@ -26,6 +34,9 @@ pull consumeIO (More t)        = case t of
 
 
 
+newtype PTransform u v = PTransform
+  { onPull :: IO u -> IO v
+  }
 
 
 
