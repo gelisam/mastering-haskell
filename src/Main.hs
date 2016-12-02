@@ -4,7 +4,7 @@ import Data.Void
 
 data TransformF u v a = Consume   (u  -> a)
                       | Produce v (() -> a)
-
+                      | Effect (IO a)
 
 data Transform u v a = Return a
                      | More (TransformF u v (Transform u v a))
@@ -39,6 +39,7 @@ data IList a = Cons a (IList a)
 instance Functor (TransformF u v) where
   fmap f (Consume   cc) = Consume   (fmap f cc)
   fmap f (Produce v cc) = Produce v (fmap f cc)
+  fmap f (Effect   mcc) = Effect    (fmap f mcc)
 
 
 
@@ -48,6 +49,8 @@ consume = More (Consume Return)
 produce :: v -> Transform u v ()
 produce v = More (Produce v Return)
 
+effect :: IO a -> Transform u v a
+effect mx = More (Effect (fmap Return mx))
 
 
 instance Functor (Transform u v) where
