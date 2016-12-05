@@ -9,19 +9,15 @@ data KeyboardOcc = KeyDown Char | KeyUp Char
 data GUI = Button Label Size | Window [(Coord, GUI)]
 
 type Time = Double
-type Event a = [(Time, a)]
+type Event a = (a -> IO ()) -> IO ()
 
 wizard :: Event ClickOcc -> Event KeyboardOcc -> Event GUI
 wizard = undefined
 
 merge :: Event a -> Event a -> Event a
-merge []         xs'           = xs'
-merge xs         []            = xs
-merge ((t,x):xs) ((t',x'):xs') | t <= t'   = (t,x)
-                                           : merge xs ((t',x'):xs')
-                               | otherwise = (t',x')
-                                           : merge ((t,x):xs) xs'
-
+merge register register' = \callback -> do
+  register callback
+  register' callback
 
 
 
