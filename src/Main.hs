@@ -14,7 +14,13 @@ type Event a = [(Time, a)]
 wizard :: Event ClickOcc -> Event KeyboardOcc -> Event GUI
 wizard = undefined
 
-
+merge :: Event a -> Event a -> Event a
+merge []         xs'           = xs'
+merge xs         []            = xs
+merge ((t,x):xs) ((t',x'):xs') | t <= t'   = (t,x)
+                                           : merge xs ((t',x'):xs')
+                               | otherwise = (t',x')
+                                           : merge ((t,x):xs) xs'
 
 
 
