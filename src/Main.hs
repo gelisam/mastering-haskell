@@ -8,13 +8,11 @@ data ClickEvent = LeftClick Coord | RightClick Coord
 data KeyboardEvent = KeyDown Char | KeyUp Char
 data GUI = Button Label Size | Window [(Coord, GUI)]
 
+type Time = Double
+type Event a = [(Time, a)]
 
-
-
-wizard :: [ClickEvent] -> [KeyboardEvent] -> [GUI]
+wizard :: Event ClickEvent -> Event KeyboardEvent -> [GUI]
 wizard = undefined
-
-
 
 
 
