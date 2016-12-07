@@ -1,21 +1,25 @@
 module Main where
 
-data Event a      -- [(Time, a)]
-data Behaviour a  -- Time -> a
+
+data Signal a  --  (0, a)  +  [(Time, a)]  =  Time -> a
 
 
-neverE :: Event a
-neverE = undefined
+--neverS :: Signal a
+--neverS = undefined
 
-mergeE :: Event a -> Event a -> Event a
-mergeE = undefined
+mergeS :: Signal a -> Signal a -> Signal a
+mergeS = undefined
 
 
-pureB :: a -> Behaviour a
-pureB = undefined
+pureS :: a -> Signal a
+pureS = undefined
 
-applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
-applyB = undefined
+applyS :: Signal (a -> b) -> Signal a -> Signal b
+applyS = undefined
+
+
+
+
 
 
 
