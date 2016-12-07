@@ -1,27 +1,21 @@
 module Main where
 
-type Label = String
-data Coord = Pos Int Int
-data Size = Size Int Int
-
-data ClickOcc = LeftClick Coord | RightClick Coord
-data KeyboardOcc = KeyDown Char | KeyUp Char
-data GUI = Button Label Size | Window [(Coord, GUI)]
-
-type Time = Double
-type Event a = (a -> IO ()) -> IO ()
-
-wizard :: Event ClickOcc -> Event KeyboardOcc -> Event GUI
-wizard = undefined
-
-merge :: Event a -> Event a -> Event a
-merge register register' = \callback -> do
-  register callback
-  register' callback
+data Event a      -- [(Time, a)]
+data Behaviour a  -- Time -> a
 
 
+neverE :: Event a
+neverE = undefined
+
+mergeE :: Event a -> Event a -> Event a
+mergeE = undefined
 
 
+pureB :: a -> Behaviour a
+pureB = undefined
+
+applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
+applyB = undefined
 
 
 
