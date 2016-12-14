@@ -1,8 +1,8 @@
 module Main where
 
-
-
-
+instance Applicative Behaviour where
+  pure  = pureB
+  (<*>) = applyB
 
 
 
@@ -62,10 +62,6 @@ data Behaviour a
 
 instance Functor Behaviour where
   fmap _ _ = undefined
-
-instance Applicative Behaviour where
-  pure  = pureB
-  (<*>) = applyB
 
 
 neverE :: Event a
