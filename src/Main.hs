@@ -1,17 +1,17 @@
 module Main where
 
-instance Applicative Behaviour where
-  pure  = pureB
-  (<*>) = applyB
+mapFilterE :: (a -> Maybe b) -> Event a -> Event b
+mapFilterE = undefined
 
-mousePositionB :: Behaviour Coord
-mousePositionB = undefined
+mouseClickE :: Event ClickOcc
+mouseClickE = undefined
 
 
-isHoveringB :: Behaviour Bool
-isHoveringB = (&&) <$> (isInside <$> mousePositionB
-                                 <*> pure buttonRect)
-                   <*> ((== 4) <$> currentPageB)
+nextPageE :: Event ()
+nextPageE = mapFilterE f mouseClickE
+  where f (LeftClick coord) | coord `is_inside` nextButtonRect
+                            = Just ()
+        f _                 = Nothing
 
 currentPageB :: Behaviour Int
 currentPageB = undefined
@@ -35,10 +35,11 @@ currentPageB = undefined
 
 
 
+
 data Rect = Rect Coord Size
 
-isInside :: Coord -> Rect -> Bool
-isInside (Pos x y) (Rect (Pos x0 y0) (Size w h))
+is_inside :: Coord -> Rect -> Bool
+is_inside (Pos x y) (Rect (Pos x0 y0) (Size w h))
     = x >= x0 && x < x0 + w
    && y >= y0 && y < y0 + h
 
@@ -59,6 +60,10 @@ data Behaviour a
 
 instance Functor Behaviour where
   fmap _ _ = undefined
+
+instance Applicative Behaviour where
+  pure  = pureB
+  (<*>) = applyB
 
 
 neverE :: Event a
@@ -84,8 +89,8 @@ data ClickOcc = LeftClick Coord | RightClick Coord
 data KeyboardOcc = KeyDown Char | KeyUp Char
 data GUI = Button Label Size | Window [(Coord, GUI)]
 
-mouseClickE :: Event ClickOcc
-mouseClickE = undefined
+mousePositionB :: Behaviour Coord
+mousePositionB = undefined
 
 
 main :: IO ()
