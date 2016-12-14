@@ -9,6 +9,9 @@ registerCallbacks = do
   
   registerCallback nextPageE $ \() -> do
     modifyIORef ref (+1)
+  
+  registerCallback prevPageE $ \() -> do
+    modifyIORef ref (subtract 1)
 
 
 
@@ -104,6 +107,9 @@ nextPageE = mapFilterE f mouseClickE
     f (LeftClick coord) | coord `is_inside` nextButtonRect
                         = Just ()
     f _                 = Nothing
+
+prevPageE :: Event ()
+prevPageE = undefined
 
 
 main :: IO ()
