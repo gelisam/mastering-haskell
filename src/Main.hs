@@ -1,20 +1,14 @@
 module Main where
 
-scanE :: (a -> b -> a) -> a -> Event b -> Event a
-scanE = undefined
-
-holdB :: a -> Event a -> Behaviour a
-holdB = undefined
+import Data.IORef
 
 
-
-goToPageE :: Event Int
-goToPageE = scanE (\page () -> page + 1)
-                  1
-                  nextPageE
-
-currentPageB :: Behaviour Int
-currentPageB = holdB 1 goToPageE
+registerCallbacks :: IO ()
+registerCallbacks = do
+  ref <- newIORef (1 :: Int)
+  
+  registerCallback nextPageE $ \() -> do
+    modifyIORef ref (+1)
 
 
 
@@ -82,6 +76,11 @@ applyB = undefined
 
 mapFilterE :: (a -> Maybe b) -> Event a -> Event b
 mapFilterE = undefined
+
+
+registerCallback :: Event a -> (a -> IO ()) -> IO ()
+registerCallback = undefined
+
 
 
 type Label = String
