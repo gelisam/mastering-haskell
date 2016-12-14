@@ -1,17 +1,17 @@
 module Main where
 
-mapFilterE :: (a -> Maybe b) -> Event a -> Event b
-mapFilterE = undefined
-
-mouseClickE :: Event ClickOcc
-mouseClickE = undefined
+scanE :: (a -> b -> a) -> a -> Event b -> Event a
+scanE = undefined
 
 
-nextPageE :: Event ()
-nextPageE = mapFilterE f mouseClickE
-  where f (LeftClick coord) | coord `is_inside` nextButtonRect
-                            = Just ()
-        f _                 = Nothing
+
+
+
+
+goToPageE :: Event Int
+goToPageE = scanE (\page () -> page + 1)
+                  1
+                  nextPageE
 
 currentPageB :: Behaviour Int
 currentPageB = undefined
@@ -80,6 +80,9 @@ applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
 applyB = undefined
 
 
+mapFilterE :: (a -> Maybe b) -> Event a -> Event b
+mapFilterE = undefined
+
 
 type Label = String
 data Coord = Pos Int Int
@@ -91,6 +94,17 @@ data GUI = Button Label Size | Window [(Coord, GUI)]
 
 mousePositionB :: Behaviour Coord
 mousePositionB = undefined
+
+mouseClickE :: Event ClickOcc
+mouseClickE = undefined
+
+nextPageE :: Event ()
+nextPageE = mapFilterE f mouseClickE
+  where
+    f :: ClickOcc -> Maybe ()
+    f (LeftClick coord) | coord `is_inside` nextButtonRect
+                        = Just ()
+    f _                 = Nothing
 
 
 main :: IO ()
