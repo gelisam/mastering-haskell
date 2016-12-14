@@ -3,8 +3,8 @@ module Main where
 scanE :: (a -> b -> a) -> a -> Event b -> Event a
 scanE = undefined
 
-
-
+holdB :: a -> Event a -> Behaviour a
+holdB = undefined
 
 
 
@@ -14,7 +14,7 @@ goToPageE = scanE (\page () -> page + 1)
                   nextPageE
 
 currentPageB :: Behaviour Int
-currentPageB = undefined
+currentPageB = holdB 1 goToPageE
 
 
 
