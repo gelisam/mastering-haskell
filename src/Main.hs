@@ -4,11 +4,11 @@ module Main where
 
 
 goToPageE :: Event Int
-goToPageE = scanE (\page () -> page + 1)
+goToPageE = scanE (\page delta -> page + delta)
                   1
-                  nextPageE
-
-
+                  ( fmap (\() ->  1) nextPageE
+           `mergeE` fmap (\() -> -1) prevPageE
+                  )
 
 currentPageB :: Behaviour Int
 currentPageB = holdB 1 goToPageE
@@ -54,6 +54,9 @@ nextButtonRect = Rect (Pos 400 300) (Size 80 30)
 
 data Event a
 data Behaviour a
+
+instance Functor Event where
+  fmap _ _ = undefined
 
 instance Functor Behaviour where
   fmap _ _ = undefined
