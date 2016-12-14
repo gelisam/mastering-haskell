@@ -13,25 +13,25 @@ isHoveringB = (&&) <$> (isInside <$> mousePositionB
                                  <*> pure buttonRect)
                    <*> ((== 4) <$> currentPageB)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 currentPageB :: Behaviour Int
 currentPageB = undefined
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
