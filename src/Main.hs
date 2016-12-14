@@ -4,8 +4,8 @@ instance Applicative Behaviour where
   pure  = pureB
   (<*>) = applyB
 
-
-
+mousePositionB :: Behaviour Coord
+mousePositionB = undefined
 
 
 isHoveringB :: Behaviour Bool
@@ -29,9 +29,6 @@ isHoveringB = (&&) <$> (isInside <$> mousePositionB
 
 
 
-
-mousePositionB :: Behaviour Coord
-mousePositionB = undefined
 
 currentPageB :: Behaviour Int
 currentPageB = undefined
