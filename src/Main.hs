@@ -1,12 +1,12 @@
 module Main where
 
-
-
-
+--       :: (Time -> Time -> a)     -> (Time -> a)
+switchBB :: Behaviour (Behaviour a) -> Behaviour a
+switchBB = undefined
 
 
 nextNextNextB :: Page (Wizard a) -> Behaviour a
-nextNextNextB page = _1
+nextNextNextB page = switchBB
                    $ configuredB
                  <$> runWizard
                  <$> configuredB page
