@@ -1,26 +1,20 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module Main where
-
-sample :: Behaviour a -> Event () -> Event a
-sample = undefined
+import Data.Bool
 
 
-currentPageGUI :: forall a. Page (Wizard a) -> Behaviour GUI
-currentPageGUI page = switchBB $ pageGUI <$> pageB
-  where
-    pageB :: Behaviour (Page (Wizard a))
-    pageB = holdB page
-          $ firstPage <$> sample nextWizardB
-                          (buttonPressE nextButton)
-    
-    nextWizardB :: Behaviour (Wizard a)
-    nextWizardB = switchBB (configuredB <$> pageB)
-    
-    firstPage :: Wizard a -> Page (Wizard a)
-    firstPage (Done x) = lastPage (Done x)
-    firstPage (More p) = p
+
+toggle1 :: Behaviour Bool
+toggle1 = toggleB (buttonPressE button1)
+
+toggle2 :: Behaviour Bool
+toggle2 = toggleB (buttonPressE button2)
+
+toggle3 :: Behaviour Bool
+toggle3 = toggleB (buttonPressE button3)
 
 
+result :: Behaviour Bool
+result = switchBB (bool toggle1 toggle2 <$> toggle3)
 
 
 
@@ -39,6 +33,15 @@ data Button = Button
 
 button :: String -> Rect -> Button
 button = undefined
+
+button1 :: Button
+button1 = undefined
+
+button2 :: Button
+button2 = undefined
+
+button3 :: Button
+button3 = undefined
 
 
 data Page a = Page
