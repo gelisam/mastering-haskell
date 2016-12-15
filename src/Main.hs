@@ -1,28 +1,17 @@
 module Main where
-import Data.Monoid
 
-data Wizard a
-  = Done a
-  | More (Page (Wizard a))
 
-runWizard :: Wizard a -> Page a
-runWizard (Done x)    = lastPage x
-runWizard (More page) = Page
-    { pageGUI     = currentPageGUI page <> buttonGUI nextButton
-    , configuredB = nextNextNextB page
-    }
-  where
-    nextButton :: Button
-    nextButton = button "Next" rect
-    
-    currentPageGUI :: Page (Wizard a) -> Behaviour GUI
-    currentPageGUI = undefined
-    
-    nextNextNextB :: Page (Wizard a) -> Behaviour a
-    nextNextNextB = undefined
 
-lastPage :: a -> Page a
-lastPage x = Page (buttonGUI $ button "Finish" rect) (pure x)
+
+
+
+nextNextNextB :: Page (Wizard a) -> Behaviour a
+nextNextNextB page = _1
+                   $ configuredB
+                 <$> runWizard
+                 <$> configuredB page
+
+
 
 
 
@@ -53,6 +42,20 @@ data Page a = Page
   }
 
 
+data Wizard a
+  = Done a
+  | More (Page (Wizard a))
+
+runWizard :: Wizard a -> Page a
+runWizard = undefined
+
+nextButton :: Button
+nextButton = button "Next" rect
+
+lastPage :: a -> Page a
+lastPage x = Page (buttonGUI $ button "Finish" rect) (pure x)
+
+
 type Label = String
 data Coord = Pos Int Int
 data Size = Size Int Int
@@ -60,15 +63,6 @@ data Size = Size Int Int
 data ClickOcc = LeftClick Coord | RightClick Coord
 data KeyboardOcc = KeyDown Char | KeyUp Char
 data GUI = ButtonGUI Label Size | Window [(Coord, GUI)]
-
-instance Monoid GUI where
-  mempty  = Window []
-  mappend (Window []) g2 = g2
-  mappend g1 (Window []) = g1
-  mappend g1 g2 = Window (toList g1 ++ toList g2)
-    where
-      toList (Window xs) = xs
-      toList x           = [(Pos 0 0, x)]
 
 normalButton :: GUI
 normalButton = undefined
@@ -98,10 +92,6 @@ instance Functor Behaviour where
 instance Applicative Behaviour where
   pure  = pureB
   (<*>) = applyB
-
-instance Monoid a => Monoid (Behaviour a) where
-  mempty = pure mempty
-  mappend b1 b2 = mappend <$> b1 <*> b2
 
 neverE :: Event a
 neverE = undefined
