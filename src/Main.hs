@@ -5,9 +5,9 @@ data Button = Button
   { buttonGUI    :: Behaviour GUI
   , buttonPressE :: Event ()
   }
-button :: Event ClickOcc -> Behaviour Coord
-       -> String -> Rect -> Button
-button mouseClickE mousePositionB label rect = Button
+
+button :: String -> Rect -> Button
+button label rect = Button
     { buttonGUI    = bool normalGUI highlightedGUI <$> isHoveringB
     , buttonPressE = mapFilterE f mouseClickE
     }
@@ -110,6 +110,12 @@ scanE = undefined
 holdB :: a -> Event a -> Behaviour a
 holdB = undefined
 
+
+mouseClickE :: Event ClickOcc
+mouseClickE = undefined
+
+mousePositionB :: Behaviour Coord
+mousePositionB = undefined
 
 
 main :: IO ()
