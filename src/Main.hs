@@ -1,19 +1,24 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
---       :: (Time -> Time -> a)     -> (Time -> a)
-switchBB :: Behaviour (Behaviour a) -> Behaviour a
-switchBB = undefined
+sample :: Behaviour a -> Event () -> Event a
+sample = undefined
 
 
-nextNextNextB :: Page (Wizard a) -> Behaviour a
-nextNextNextB page = switchBB
-                   $ configuredB
-                 <$> runWizard
-                 <$> configuredB page
-
-
-
-
+currentPageGUI :: forall a. Page (Wizard a) -> Behaviour GUI
+currentPageGUI page = switchBB $ pageGUI <$> pageB
+  where
+    pageB :: Behaviour (Page (Wizard a))
+    pageB = holdB page
+          $ firstPage <$> sample nextWizardB
+                          (buttonPressE nextButton)
+    
+    nextWizardB :: Behaviour (Wizard a)
+    nextWizardB = switchBB (configuredB <$> pageB)
+    
+    firstPage :: Wizard a -> Page (Wizard a)
+    firstPage (Done x) = lastPage (Done x)
+    firstPage (More p) = p
 
 
 
@@ -106,6 +111,9 @@ pureB = undefined
 applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
 applyB = undefined
 
+applyE :: Behaviour (a -> b) -> Event a -> Event b
+applyE = undefined
+
 
 mapFilterE :: (a -> Maybe b) -> Event a -> Event b
 mapFilterE = undefined
@@ -115,6 +123,9 @@ scanE = undefined
 
 holdB :: a -> Event a -> Behaviour a
 holdB = undefined
+
+switchBB :: Behaviour (Behaviour a) -> Behaviour a
+switchBB = undefined
 
 
 toggleB :: Event () -> Behaviour Bool
