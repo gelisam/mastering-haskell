@@ -16,6 +16,9 @@ toggle3 = toggleB (buttonPressE button3)
 result :: Behaviour Bool
 result = switchBB (bool toggle1 toggle2 <$> toggle3)
 
+result' :: Behaviour Bool
+result' = bool <$> toggle1 <*> toggle2 <*> toggle3
+
 
 
 
