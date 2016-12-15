@@ -1,23 +1,30 @@
 module Main where
+import Data.Monoid
 
+data Wizard a
+  = Done a
+  | More (Page (Wizard a))
 
-data Page a = Page
-  { pageGUI     :: Behaviour GUI
-  , configuredB :: Behaviour a
-  }
-
-chooseBool :: Page Bool
-chooseBool = Page
-    { pageGUI     = buttonGUI toggleButton
-    , configuredB = toggleB (buttonPressE toggleButton)
+runWizard :: Wizard a -> Page a
+runWizard (Done x)    = lastPage x
+runWizard (More page) = Page
+    { pageGUI     = currentPageGUI page <> buttonGUI nextButton
+    , configuredB = nextNextNextB page
     }
   where
-    toggleButton :: Button
-    toggleButton = button "Toggle" rect
+    nextButton :: Button
+    nextButton = button "Next" rect
+    
+    currentPageGUI :: Page (Wizard a) -> Behaviour GUI
+    currentPageGUI = undefined
+    
+    nextNextNextB :: Page (Wizard a) -> Behaviour a
+    nextNextNextB = undefined
 
-toggleB :: Event () -> Behaviour Bool
-toggleB e = holdB False
-          $ scanE (\b () -> not b) False e
+lastPage :: a -> Page a
+lastPage x = Page (buttonGUI $ button "Finish" rect) (pure x)
+
+
 
 
 
@@ -40,6 +47,12 @@ button :: String -> Rect -> Button
 button = undefined
 
 
+data Page a = Page
+  { pageGUI     :: Behaviour GUI
+  , configuredB :: Behaviour a
+  }
+
+
 type Label = String
 data Coord = Pos Int Int
 data Size = Size Int Int
@@ -47,6 +60,15 @@ data Size = Size Int Int
 data ClickOcc = LeftClick Coord | RightClick Coord
 data KeyboardOcc = KeyDown Char | KeyUp Char
 data GUI = ButtonGUI Label Size | Window [(Coord, GUI)]
+
+instance Monoid GUI where
+  mempty  = Window []
+  mappend (Window []) g2 = g2
+  mappend g1 (Window []) = g1
+  mappend g1 g2 = Window (toList g1 ++ toList g2)
+    where
+      toList (Window xs) = xs
+      toList x           = [(Pos 0 0, x)]
 
 normalButton :: GUI
 normalButton = undefined
@@ -77,6 +99,10 @@ instance Applicative Behaviour where
   pure  = pureB
   (<*>) = applyB
 
+instance Monoid a => Monoid (Behaviour a) where
+  mempty = pure mempty
+  mappend b1 b2 = mappend <$> b1 <*> b2
+
 neverE :: Event a
 neverE = undefined
 
@@ -100,6 +126,10 @@ scanE = undefined
 holdB :: a -> Event a -> Behaviour a
 holdB = undefined
 
+
+toggleB :: Event () -> Behaviour Bool
+toggleB e = holdB False
+          $ scanE (\b () -> not b) False e
 
 main :: IO ()
 main = return ()
