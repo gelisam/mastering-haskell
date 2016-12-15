@@ -1,8 +1,8 @@
 module Main where
 import Data.Bool
 
-
-
+--       (t0,click),      (t1,click),       ...
+-- False,           True,            False, ...
 toggle1 :: Behaviour Bool
 toggle1 = toggleB (buttonPressE button1)
 
