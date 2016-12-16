@@ -5,10 +5,10 @@ data SigTrans a b  -- Signal a -> Signal b
 
 
 
-pureS :: a -> Signal a
+pureS :: b -> SigTrans a b
 pureS = undefined
 
-applyS :: Signal (a -> b) -> Signal a -> Signal b
+applyS :: SigTrans a (b -> c) -> SigTrans a b -> SigTrans a c
 applyS = undefined
 
 
@@ -22,11 +22,6 @@ applyS = undefined
 
 
 
-
-
-
-
-data Signal a
 
 
 main :: IO ()
