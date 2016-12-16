@@ -13,12 +13,12 @@ incrIntRef ref = modifySTRef ref (+1)
 switch :: (forall t. ST t a) -> ST s a
 switch body = return $ runST body
 
-valid :: ST s Int
-valid = do
+invalid :: ST s Int
+invalid = do
   ref <- newIntRef
   _ <- switch $ do
     ref2 <- newIntRef
-    incrIntRef ref2
+    incrIntRef ref
     readSTRef ref2
   readSTRef ref
 
