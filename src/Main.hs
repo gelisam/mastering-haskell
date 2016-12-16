@@ -1,23 +1,23 @@
 {-# LANGUAGE ImpredicativeTypes, RankNTypes #-}
 module Main where
 
-data Reactive s a
+
 
 --                    |
 --       (t0,click),      (t1,click),       ...
 -- False,           True,            False, ...
-toggle1 :: Reactive s (Behaviour s Bool)
+toggle1 :: Behaviour s Bool
 toggle1 = toggleB (buttonPressE button1)
 
 switchEB' :: Behaviour s a
-          -> Event s (forall t. Reactive t (Behaviour t a))
+          -> Event s (forall t. Behaviour t a)
           -> Behaviour s a
 switchEB' = undefined
 
 switchEB :: Behaviour s a
          -> Event s (Behaviour s a)
          -> Behaviour s a
-switchEB b ebx = switchEB' b (return <$> ebx)
+switchEB b ebx = switchEB' b ebx
 
 
 
@@ -44,17 +44,6 @@ buttonPressE = undefined
 button1 :: Button
 button1 = undefined
 
-
-
-instance Functor (Reactive s) where
-  fmap = undefined
-
-instance Applicative (Reactive s) where
-  pure = undefined
-  (<*>) = undefined
-
-instance Monad (Reactive s) where
-  (>>=) = undefined
 
 
 data Event s a
@@ -90,17 +79,15 @@ applyE = undefined
 mapFilterE :: (a -> Maybe b) -> Event s a -> Event s b
 mapFilterE = undefined
 
-scanE :: (a -> b -> a) -> a -> Event s b -> Reactive s (Event s a)
+scanE :: (a -> b -> a) -> a -> Event s b -> Event s a
 scanE = undefined
 
-holdB :: a -> Event s a -> Reactive s (Behaviour s a)
+holdB :: a -> Event s a -> Behaviour s a
 holdB = undefined
 
 
-toggleB :: Event s () -> Reactive s (Behaviour s Bool)
-toggleB e = do
-  e' <- scanE (\b () -> not b) False e
-  holdB False e'
+toggleB :: Event s () -> Behaviour s Bool
+toggleB e = holdB False $ scanE (\b () -> not b) False e
 
 main :: IO ()
 main = return ()
