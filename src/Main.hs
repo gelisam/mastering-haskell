@@ -13,7 +13,10 @@ switchEB' :: Behaviour a
           -> Behaviour a
 switchEB' = undefined
 
-
+switchEB :: Behaviour a
+         -> Event (Behaviour a)
+         -> Behaviour a
+switchEB b ebx = switchEB' b (return <$> ebx)
 
 
 
