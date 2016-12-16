@@ -1,61 +1,24 @@
+module Main where
+type Image = [String]
+
+circle :: Image
+circle = [ ".....******....."
+         , "..************.."
+         , ".**************."
+         , "****************"
+         , "****************"
+         , "****************"
+         , ".**************."
+         , "..************.."
+         , ".....******....."
+         ]
 
 
 
 
 
-
-
-
-
-
-        -------------------------------------------------
-        --                                             --
-        --  Continuous, Discrete, and Causal Time      --
-        --                                             --
-        --                         by Samuel Gélineau  --
-        --                         published by Packt  --
-        --                                             --
-        -------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+draw :: Image -> IO ()
+draw image = mapM_ putStrLn image
 
 main :: IO ()
-main = putStrLn "Welcome to the course!"
+main = draw circle
