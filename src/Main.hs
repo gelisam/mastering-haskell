@@ -2,9 +2,9 @@ module Main where
 
 
 
-
-
-
+--                    |
+--       (t0,click),      (t1,click),       ...
+-- False,           True,            False, ...
 toggle1 :: Signal Bool
 toggle1 = toggleS (buttonPressS button1)
 
