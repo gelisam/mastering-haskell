@@ -11,6 +11,8 @@ toggle1 clickE = toggleS clickE
 switchSS' :: Signal (Signal a -> Signal b) -> Signal a -> Signal b
 switchSS' = undefined
 
+switchSS :: Signal (Signal a) -> Signal a
+switchSS ssx = switchSS' (const <$> ssx) (pure ())
 
 
 
