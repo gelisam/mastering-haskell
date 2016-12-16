@@ -1,23 +1,23 @@
-{-# LANGUAGE ImpredicativeTypes, RankNTypes #-}
+{-# LANGUAGE RankNTypes #-}
 module Main where
 
+newtype ForallBehaviour a = ForallBehaviour
+  { getBehaviour :: forall t. Behaviour t a }
+newtype ForallEvent a = ForallEvent
+  { getEvent :: forall t. Event t a }
 
-
---                    |
---       (t0,click),      (t1,click),       ...
--- False,           True,            False, ...
 toggle1 :: Behaviour s Bool
 toggle1 = toggleB (buttonPressE button1)
 
 switchEB' :: Behaviour s a
-          -> Event s (forall t. Behaviour t a)
+          -> Event s (ForallBehaviour a)
           -> Behaviour s a
 switchEB' = undefined
 
 switchEB :: Behaviour s a
          -> Event s (Behaviour s a)
          -> Behaviour s a
-switchEB b ebx = switchEB' b ebx
+switchEB b ebx = switchEB' b (ForallBehaviour <$> ebx)
 
 
 
