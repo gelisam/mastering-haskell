@@ -1,18 +1,15 @@
 module Main where
 
-
+data SigTrans a b  -- Signal a -> Signal b
 
 --                    |
 --       (t0,click),      (t1,click),       ...
 -- False,           True,            False, ...
-toggle1 :: Signal () -> Signal Bool
-toggle1 clickE = toggleS clickE
+toggle1 :: SigTrans () Bool
+toggle1 = undefined
 
-switchSS' :: Signal (Signal a -> Signal b) -> Signal a -> Signal b
-switchSS' = undefined
-
-switchSS :: Signal (Signal a) -> Signal a
-switchSS ssx = switchSS' (const <$> ssx) (pure ())
+switchSS :: Signal (SigTrans a b) -> SigTrans a b
+switchSS = undefined
 
 
 
@@ -25,48 +22,11 @@ switchSS ssx = switchSS' (const <$> ssx) (pure ())
 
 
 
-
-
-data Button
-
-buttonPressS :: Button -> Signal ()
-buttonPressS = undefined
-
-button1 :: Button
-button1 = undefined
 
 
 
 data Signal a
 
-instance Functor Signal where
-  fmap _ _ = undefined
-
-instance Applicative Signal where
-  pure  = pureS
-  (<*>) = applyS
-
-mergeS :: Signal a -> Signal a -> Signal a
-mergeS = undefined
-
-
-pureS :: a -> Signal a
-pureS = undefined
-
-applyS :: Signal (a -> b) -> Signal a -> Signal b
-applyS = undefined
-
-
-scanS :: (a -> b -> a) -> a -> Signal b -> Signal a
-scanS = undefined
-
-holdS :: a -> Signal a -> Signal a
-holdS = undefined
-
-
-toggleS :: Signal () -> Signal Bool
-toggleS e = holdS False
-          $ scanS (\b () -> not b) False e
 
 main :: IO ()
 main = return ()
