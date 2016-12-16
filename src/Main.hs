@@ -5,11 +5,23 @@ data Reactive a
 
 
 
-scanE :: (a -> b -> a) -> a -> Event b -> Reactive (Event a)
-scanE = undefined
+neverE :: Event a
+neverE = undefined
 
-holdB :: a -> Event a -> Reactive (Behaviour a)
-holdB = undefined
+mergeE :: Event a -> Event a -> Event a
+mergeE = undefined
+
+pureB :: a -> Behaviour a
+pureB = undefined
+
+applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
+applyB = undefined
+
+applyE :: Behaviour (a -> b) -> Event a -> Event b
+applyE = undefined
+
+mapFilterE :: (a -> Maybe b) -> Event a -> Event b
+mapFilterE = undefined
 
 
 
