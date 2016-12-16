@@ -8,8 +8,10 @@ module Main where
 toggle1 :: Behaviour Bool
 toggle1 = toggleB (buttonPressE button1)
 
-switchBB :: Behaviour (Behaviour a) -> Behaviour a
-switchBB = undefined
+switchEB :: Behaviour a
+         -> Event (Behaviour a)
+         -> Behaviour a
+switchEB = undefined
 
 
 
