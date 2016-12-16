@@ -8,7 +8,7 @@ data SigTrans a b  -- Signal a -> Signal b
 toggle1 :: SigTrans () Bool
 toggle1 = undefined
 
-switchSS :: Signal (SigTrans a b) -> SigTrans a b
+switchSS :: SigTrans a (SigTrans a b) -> SigTrans a b
 switchSS = undefined
 
 
