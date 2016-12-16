@@ -1,21 +1,22 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ImpredicativeTypes, RankNTypes #-}
 module Main where
 
-data Reactive a
+data Reactive s a
 
 --                    |
 --       (t0,click),      (t1,click),       ...
 -- False,           True,            False, ...
-toggle1 :: Reactive (Behaviour Bool)
+toggle1 :: Reactive s (Behaviour s Bool)
 toggle1 = toggleB (buttonPressE button1)
 
-switchEB' :: Behaviour a
-          -> Event (Reactive (Behaviour a))
-          -> Behaviour a
+switchEB' :: Behaviour s a
+          -> Event s (forall t. Reactive t (Behaviour t a))
+          -> Behaviour s a
 switchEB' = undefined
 
-switchEB :: Behaviour a
-         -> Event (Behaviour a) -> Behaviour a
+switchEB :: Behaviour s a
+         -> Event s (Behaviour s a)
+         -> Behaviour s a
 switchEB b ebx = switchEB' b (return <$> ebx)
 
 
@@ -37,7 +38,7 @@ switchEB b ebx = switchEB' b (return <$> ebx)
 
 data Button
 
-buttonPressE :: Button -> Event ()
+buttonPressE :: Button -> Event s ()
 buttonPressE = undefined
 
 button1 :: Button
@@ -45,58 +46,58 @@ button1 = undefined
 
 
 
-instance Functor Reactive where
+instance Functor (Reactive s) where
   fmap = undefined
 
-instance Applicative Reactive where
+instance Applicative (Reactive s) where
   pure = undefined
   (<*>) = undefined
 
-instance Monad Reactive where
+instance Monad (Reactive s) where
   (>>=) = undefined
 
 
-data Event a
-data Behaviour a
+data Event s a
+data Behaviour s a
 
-instance Functor Event where
+instance Functor (Event s) where
   fmap _ _ = undefined
 
-instance Functor Behaviour where
+instance Functor (Behaviour s) where
   fmap _ _ = undefined
 
-instance Applicative Behaviour where
+instance Applicative (Behaviour s) where
   pure  = pureB
   (<*>) = applyB
 
-neverE :: Event a
+neverE :: Event s a
 neverE = undefined
 
-mergeE :: Event a -> Event a -> Event a
+mergeE :: Event s a -> Event s a -> Event s a
 mergeE = undefined
 
 
-pureB :: a -> Behaviour a
+pureB :: a -> Behaviour s a
 pureB = undefined
 
-applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
+applyB :: Behaviour s (a -> b) -> Behaviour s a -> Behaviour s b
 applyB = undefined
 
-applyE :: Behaviour (a -> b) -> Event a -> Event b
+applyE :: Behaviour s (a -> b) -> Event s a -> Event s b
 applyE = undefined
 
 
-mapFilterE :: (a -> Maybe b) -> Event a -> Event b
+mapFilterE :: (a -> Maybe b) -> Event s a -> Event s b
 mapFilterE = undefined
 
-scanE :: (a -> b -> a) -> a -> Event b -> Reactive (Event a)
+scanE :: (a -> b -> a) -> a -> Event s b -> Reactive s (Event s a)
 scanE = undefined
 
-holdB :: a -> Event a -> Reactive (Behaviour a)
+holdB :: a -> Event s a -> Reactive s (Behaviour s a)
 holdB = undefined
 
 
-toggleB :: Event () -> Reactive (Behaviour Bool)
+toggleB :: Event s () -> Reactive s (Behaviour s Bool)
 toggleB e = do
   e' <- scanE (\b () -> not b) False e
   holdB False e'
