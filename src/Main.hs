@@ -12,16 +12,16 @@ edges = undefined
 predecesors :: Node -> Set Node
 predecesors n = Set.map fst $ Set.filter ((== n) . snd) edges
 
-holdB :: Ord a => a -> Event a -> Behaviour a
-holdB x e n = let xs = Set.map (holdB x e)
+holdB :: Ord a => (Set a -> a) -> Event a -> Behaviour a
+holdB g e n = let xs = Set.map (holdB g e)
                                (predecesors n)
-                  x' = if Set.null xs then x else undefined
+                  x' = g xs
               in last (x':e n)
 
-scanE :: Ord b => (b -> a -> b) -> b -> Event a -> Event b
-scanE f y e n = let ys = Set.map (holdB y (scanE f y e))
+scanE :: Ord b => (b->a->b) -> (Set b -> b) -> Event a -> Event b
+scanE f g e n = let ys = Set.map (holdB g (scanE f g e))
                                  (predecesors n)
-                    y' = if Set.null ys then y else undefined
+                    y' = g ys
                 in tail (scanl' f y' (e n))
 
 
