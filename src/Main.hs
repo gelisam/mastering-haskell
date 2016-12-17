@@ -8,8 +8,8 @@ type Animation = Double -> Image
 pulsatingCircle :: Animation
 pulsatingCircle t = mkCircle (13.2 * sin t)
 
-
-
+slow3x :: Animation -> Animation
+slow3x f t = f (t/3)
 
 animate :: Animation -> IO ()
 animate animation = go 0
@@ -19,7 +19,7 @@ animate animation = go 0
                   go (t + 0.1)
 
 main :: IO ()
-main = animate pulsatingCircle
+main = animate $ slow3x pulsatingCircle
 
 
 
