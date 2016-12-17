@@ -1,24 +1,22 @@
 module Main where
-type Image = [String]
+import Control.Monad
 
-circle :: Image
-circle = [ ".....******....."
-         , "..************.."
-         , ".**************."
-         , "****************"
-         , "****************"
-         , "****************"
-         , ".**************."
-         , "..************.."
-         , ".....******....."
-         ]
+data Vec2D = Vec2D Double Double
+type Image = Vec2D -> Char
 
-zoom3x :: Image -> Image
-zoom3x = thrice . map thrice
-  where thrice = concatMap (\x -> [x,x,x])
+mkCircle :: Double -> Image
+mkCircle r (Vec2D x y) = if x*x + y*y < r*r then '*' else '.'
 
-draw :: Image -> IO ()
-draw image = mapM_ putStrLn image
+
+
+
+draw :: Double -> Image -> IO ()
+draw range image = do
+  forM_ [-range..range] $ \y -> do
+    forM_ [-range..range] $ \x -> do
+      putChar $ image $ Vec2D x y
+      putChar $ image $ Vec2D x y
+    putChar '\n'
 
 main :: IO ()
-main = draw (zoom3x circle)
+main = draw 4 $ mkCircle 4.4
