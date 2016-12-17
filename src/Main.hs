@@ -7,8 +7,8 @@ type Image = Vec2D -> Char
 mkCircle :: Double -> Image
 mkCircle r (Vec2D x y) = if x*x + y*y < r*r then '*' else '.'
 
-
-
+zoom3x :: Image -> Image
+zoom3x f (Vec2D x y) = f $ Vec2D (x/3) (y/3)
 
 draw :: Double -> Image -> IO ()
 draw range image = do
@@ -19,4 +19,4 @@ draw range image = do
     putChar '\n'
 
 main :: IO ()
-main = draw 4 $ mkCircle 4.4
+main = draw 14 $ zoom3x $ mkCircle 4.4
