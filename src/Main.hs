@@ -8,8 +8,8 @@ type Animation = [Image]
 pulsatingCircle :: Animation
 pulsatingCircle = [mkCircle (13.2 * sin t) | t <- [0,0.1..]]
 
-
-
+slow3x :: Animation -> Animation
+slow3x = concatMap (\x -> [x,x,x])
 
 animate :: Animation -> IO ()
 animate []             = return ()
@@ -19,7 +19,7 @@ animate (image:images) = do draw 14 image
                             animate images
 
 main :: IO ()
-main = animate pulsatingCircle
+main = animate $ slow3x pulsatingCircle
 
 
 
