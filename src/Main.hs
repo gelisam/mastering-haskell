@@ -3,23 +3,23 @@ import Control.Concurrent
 import Control.Monad
 import System.Process
 
-type Animation = [Image]
+type Animation = Double -> Image
 
 pulsatingCircle :: Animation
-pulsatingCircle = [mkCircle (13.2 * sin t) | t <- [0,0.1..]]
+pulsatingCircle t = mkCircle (13.2 * sin t)
 
-slow3x :: Animation -> Animation
-slow3x = concatMap (\x -> [x,x,x])
+
+
 
 animate :: Animation -> IO ()
-animate []             = return ()
-animate (image:images) = do draw 14 image
-                            threadDelay (50*1000)
-                            _ <- system "clear"
-                            animate images
+animate animation = go 0
+  where go t = do draw 14 (animation t)
+                  threadDelay (50*1000)
+                  _ <- system "clear"
+                  go (t + 0.1)
 
 main :: IO ()
-main = animate $ slow3x pulsatingCircle
+main = animate pulsatingCircle
 
 
 
