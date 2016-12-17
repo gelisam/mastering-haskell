@@ -1,22 +1,87 @@
 module Main where
 import Control.Concurrent
+import Control.Concurrent.MVar
 import Control.Monad
+import Data.IORef
 import Data.Monoid
+import System.IO.Unsafe
 import System.Process
 
-periodicE :: Event ()
-periodicE = [(t,()) | t <- [0..]]
-
-up, down :: Vec2D
-(up, down) = (Vec2D 0 (-1), Vec2D 0 1)
-
-upDownB, downUpB :: Behaviour Vec2D
-upDownB = holdB up   $ scanE (\d () -> negate d) up   periodicE
-downUpB = holdB down $ scanE (\d () -> negate d) down periodicE
+slow_odd :: Int -> Bool
+slow_odd n = unsafePerformIO $ do
+  threadDelay (100 * 1000)
+  return (odd n)
 
 main :: IO ()
-main = animate $ (<>) <$> (mkArrow (Vec2D (-10) 0) <$> upDownB)
-                      <*> (mkArrow (Vec2D   10  0) <$> downUpB)
+main = do
+  animation <- newAnimation
+  
+  registerPeriodicCallback animation $ \n -> do
+    setLeft animation (even n)
+  
+  registerPeriodicCallback animation $ \n -> do
+    setRight animation (slow_odd n)
+  
+  
+  
+  
+  
+  cs <- readIORef (callbacks animation)
+  let loop i = do threadDelay (500 * 1000)
+                  forM_ cs $ \c -> forkIO $ c i
+                  loop (i+1)
+  loop 1
+
+
+
+
+
+
+
+registerPeriodicCallback :: Animation -> (Int -> IO ()) -> IO ()
+registerPeriodicCallback animation callback =
+  modifyIORef (callbacks animation) (callback:)
+
+
+data Animation = Animation
+  { leftRef   :: IORef Bool
+  , rightRef  :: IORef Bool
+  , callbacks :: IORef [Int -> IO ()]
+  , lock      :: MVar ()
+  }
+
+newAnimation :: IO Animation
+newAnimation = Animation <$> newIORef False
+                         <*> newIORef False
+                         <*> newIORef []
+                         <*> newMVar ()
+
+setLeft :: Animation -> Bool -> IO ()
+setLeft animation b = b `seq` withMVar (lock animation) $ \() -> do
+  writeIORef (leftRef animation) b
+  redraw animation
+
+setRight :: Animation -> Bool -> IO ()
+setRight animation b = b `seq` withMVar (lock animation) $ \() -> do
+  writeIORef (rightRef animation) b
+  redraw animation
+
+redraw :: Animation -> IO ()
+redraw animation = do
+  leftDir  <- upDown <$> readIORef (leftRef animation)
+  rightDir <- upDown <$> readIORef (rightRef animation)
+  let image = mkArrow (Vec2D (-10) 0) leftDir
+           <> mkArrow (Vec2D   10  0) rightDir
+  _ <- system "clear"
+  draw 14 image
+
+
+
+
+upDown :: Bool -> Vec2D
+upDown True  = Vec2D 0 (-1)  -- up
+upDown False = Vec2D 0   1   -- down
+
 
 
 
@@ -32,6 +97,10 @@ scanE f y ((t,x):xs) = let y' = f y x
 
 holdB :: a -> Event a -> Behaviour a
 holdB x e t = last $ x : map snd (takeWhile ((< t) . fst) e)
+
+
+periodicE :: Event ()
+periodicE = [(t,()) | t <- [0,0.5..]]
 
 
 
@@ -75,15 +144,6 @@ instance Fractional a => Fractional (t -> a) where
   recip = fmap recip
   fromRational = pure . fromRational
 
-
-type Animation = Double -> Image
-
-animate :: Animation -> IO ()
-animate animation = go 0
-  where go t = do draw 14 (animation t)
-                  threadDelay (50*1000)
-                  _ <- system "clear"
-                  go (t + 0.1)
 
 
 
