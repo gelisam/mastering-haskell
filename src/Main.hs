@@ -4,6 +4,37 @@ import Control.Monad
 import Data.Monoid
 import System.Process
 
+periodicE :: Event ()
+periodicE = [(t,()) | t <- [0..]]
+
+up, down :: Vec2D
+(up, down) = (Vec2D 0 (-1), Vec2D 0 1)
+
+upDownB, downUpB :: Behaviour Vec2D
+upDownB = holdB up   $ scanE (\d () -> negate d) up   periodicE
+downUpB = holdB down $ scanE (\d () -> negate d) down periodicE
+
+main :: IO ()
+main = animate $ (<>) <$> (mkArrow (Vec2D (-10) 0) <$> upDownB)
+                      <*> (mkArrow (Vec2D   10  0) <$> downUpB)
+
+
+
+
+
+
+type Event a = [(Double, a)]
+
+scanE :: (b -> a -> b) -> b -> Event a -> Event b
+scanE _ _ []     = []
+scanE f y ((t,x):xs) = let y' = f y x
+                       in (t,y') : scanE f y' xs
+
+holdB :: a -> Event a -> Behaviour a
+holdB x e t = last $ x : map snd (takeWhile ((< t) . fst) e)
+
+
+
 type Behaviour a = Double -> a
 
 differentiate :: Fractional a => Behaviour a -> Behaviour a
@@ -11,16 +42,13 @@ differentiate f t = (f (t - 0.1) - f t) / 0.1
 
 
 mkArrow :: Vec2D -> Vec2D -> Image
-mkArrow pos dir = mkCircle 4 (pos - 0.0 * dir)
-               <> mkCircle 3 (pos - 0.3 * dir)
-               <> mkCircle 2 (pos - 0.6 * dir)
-               <> mkCircle 1 (pos - 0.8 * dir)
+mkArrow pos dir = mkCircle 4 (pos - 0.0 * 7 * dir)
+               <> mkCircle 3 (pos - 0.3 * 7 * dir)
+               <> mkCircle 2 (pos - 0.6 * 7 * dir)
+               <> mkCircle 1 (pos - 0.8 * 7 * dir)
 
 position :: Behaviour Vec2D
 position t = Vec2D (8 * sin t) (8 * cos t)
-
-main :: IO ()
-main = animate $ mkArrow <$> position <*> differentiate position
 
 
 
