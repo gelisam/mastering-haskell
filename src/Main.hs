@@ -1,19 +1,31 @@
 module Main where
+import Control.Concurrent
 import Control.Monad
 import Data.Bits
 import Data.Hashable
 import System.Random
 import Text.Printf
 
-type Block = (Hash, Nonce, BlockNumber)
 
-mineCoins :: Block -> Rng -> IO ()
-mineCoins prevBlock@(_,_,blockNumber) rng = do
+mineCoins :: MVar Block -> Rng -> IO ()
+mineCoins var rng = do
+  prevBlock@(_, _, blockNumber) <- readMVar var
   when (blockNumber < 25) $ do
     (r, rng') <- tryNextNonce prevBlock rng
-    case r of Just block -> do printf "%064b\n" (hash block)
-                               mineCoins block rng'
-              Nothing -> mineCoins prevBlock rng'
+    case r of Just block -> do
+                printf "%064b\n" (hash block)
+                _ <- swapMVar var block
+                mineCoins var rng'
+              Nothing -> do
+                mineCoins var rng'
+
+
+
+
+
+
+
+type Block = (Hash, Nonce, BlockNumber)
 
 tryNextNonce :: Block -> Rng -> IO (Maybe Block, Rng)
 tryNextNonce prevBlock@(_,_,blockNumber) rng = do
@@ -27,10 +39,9 @@ tryNextNonce prevBlock@(_,_,blockNumber) rng = do
 
 main :: IO ()
 main = do
-  let block0 = (0, 0, 0)
+  var <- newMVar (0, 0, 0)
   rng <- newRng
-  mineCoins block0 rng
-
+  mineCoins var rng
 
 
 type Hash        = Int
