@@ -13,15 +13,14 @@ mineCoins var rng = do
   when (blockNumber < 25) $ do
     (r, rng') <- tryNextNonce prevBlock rng
     case r of Just block -> do
-                printf "%064b\n" (hash block)
-                _ <- swapMVar var block
+                prevBlock' <- takeMVar var
+                if prevBlock' == prevBlock
+                then do printf "%064b\n" (hash block)
+                        putMVar var block
+                else putMVar var prevBlock
                 mineCoins var rng'
               Nothing -> do
                 mineCoins var rng'
-
-
-
-
 
 
 
