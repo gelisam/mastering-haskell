@@ -4,7 +4,7 @@ import Control.Concurrent
 import Control.Monad
 import System.IO.Unsafe
 
--- ghc src/Main.hs  -threaded  -rtsopts -with-rtsopts=-N
+-- ghc src/Main.hs
 main :: IO ()
 main = print $ parMap fib [0..39]
 
