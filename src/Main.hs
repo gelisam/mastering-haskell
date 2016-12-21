@@ -7,6 +7,12 @@ import System.Random
 import Text.Printf
 
 
+mineCoinsFaster :: MVar Block -> IO ()
+mineCoinsFaster var = do
+  replicateM_ 4 $ do
+    rng <- newRng
+    forkIO $ mineCoins var rng
+
 mineCoins :: MVar Block -> Rng -> IO ()
 mineCoins var rng = do
   prevBlock@(_, _, blockNumber) <- readMVar var
@@ -39,8 +45,13 @@ tryNextNonce prevBlock@(_,_,blockNumber) rng = do
 main :: IO ()
 main = do
   var <- newMVar (0, 0, 0)
-  rng <- newRng
-  mineCoins var rng
+  mineCoinsFaster var
+  
+  let loop = do
+        threadDelay (10 * 1000)
+        (_, _, blockNumber) <- readMVar var
+        when (blockNumber < 25) loop
+  loop
 
 
 type Hash        = Int
