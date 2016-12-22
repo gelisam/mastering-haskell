@@ -16,6 +16,8 @@ receive :: Program Int
 receive = Bind Receive Return
 
 
+runPrograms :: [Program a] -> IO [a]
+runPrograms = undefined
 
 
 
