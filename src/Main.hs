@@ -1,23 +1,27 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE GADTs #-}
 module Main where
-import Control.Concurrent
-import Control.Monad
-import System.IO.Unsafe
 
--- ghc src/Main.hs
+data ProgramF a where
+  Send    :: Int -> ProgramF ()
+  Receive :: ProgramF Int
+
+data Program a where
+  Return :: a -> Program a
+  Bind   :: ProgramF a -> (a -> Program b) -> Program b
+
+send :: Int -> Program ()
+send n = Bind (Send n) Return
+
+receive :: Program Int
+receive = Bind Receive Return
+
+
+
+
+
+
+
+
+
 main :: IO ()
-main = print $ parMap fib [0..39]
-
-fib :: Int -> Integer
-fib 0 = 1
-fib 1 = 1
-fib n = fib (n-1) + fib (n-2)
-
-parMap :: (a -> b) -> [a] -> [b]
-parMap f xs = unsafePerformIO $ do
-  vars <- forM xs $ \x -> do
-    var <- newEmptyMVar
-    _ <- forkIO $ do let !y = f x
-                     putMVar var y
-    return var
-  mapM readMVar vars
+main = return ()
