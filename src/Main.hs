@@ -6,7 +6,7 @@ import Data.Hashable
 import System.Random
 import Text.Printf
 
--- ghc src/Main.hs  -threaded -rtsopts -with-rtsopts=-N1
+-- ghc src/Main.hs
 mineCoinsFaster :: MVar Block -> IO ()
 mineCoinsFaster var = do
   replicateM_ 4 $ do
