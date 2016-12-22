@@ -5,7 +5,7 @@ import Control.Concurrent.STM
 import Control.Monad
 
 fibs :: [Program Int]
-fibs = base : replicate 39 step
+fibs = replicate 39 step ++ [base]
   where
     base :: Program Int
     base = do
