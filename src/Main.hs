@@ -3,26 +3,28 @@ module Main where
 import Control.Concurrent
 import Control.Monad
 
-fibs :: [Program Int]
-fibs = base : replicate 39 step
+fibs :: [Program [Int]]
+fibs = [source, transform, sink]
   where
-    base :: Program Int
-    base = do
-      send 0
-      send 1
-      return 1
-    
-    step :: Program Int
-    step = do
-      x1 <- receive
-      x2 <- receive
-      send x2
-      let x3 = x1 + x2
-      send x3
-      return x3
+    source, transform, sink :: Program [Int]
+    source = do mapM_ send [0..10]
+                send (-1)
+                return [0..10]
+    transform = do
+      n <- receive
+      if n == (-1) then do send (-1)
+                           return []
+                   else if even n then do send n
+                                          (n:) <$> transform
+                                  else transform
+    sink = do
+      n <- receive
+      if n == (-1) then return [0]
+                   else do s <- head <$> sink
+                           return [n + s]
 
 main :: IO ()
-main = runPrograms fibs >>= print
+main = runPrograms fibs >>= mapM_ print
 
 
 
