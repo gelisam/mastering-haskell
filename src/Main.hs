@@ -4,6 +4,26 @@ import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Monad
 
+fibs :: [Program Int]
+fibs = base : replicate 39 step
+  where
+    base :: Program Int
+    base = do
+      send 0
+      send 1
+      return 1
+    
+    step :: Program Int
+    step = do
+      x1 <- receive
+      x2 <- receive
+      send x2
+      let x3 = x1 + x2
+      send x3
+      return x3
+
+
+
 runProgramF :: TChan Int
             -> TChan Int
             -> TChan Int
@@ -14,11 +34,6 @@ runProgramF l _  r Receive  = atomically $ do
   tryReadTChan l >>= \case
     Just x  -> return x
     Nothing -> readTChan r
-
-
-
-
-
 
 
 
@@ -78,24 +93,6 @@ instance Monad Program where
   Bind px cc >>= f = Bind px ((>>= f) <$> cc)
 
 
-
-fibs :: [Program Int]
-fibs = base : replicate 39 step
-  where
-    base :: Program Int
-    base = do
-      send 0
-      send 1
-      return 1
-    
-    step :: Program Int
-    step = do
-      x1 <- receive
-      x2 <- receive
-      send x2
-      let x3 = x1 + x2
-      send x3
-      return x3
 
 main :: IO ()
 main = runPrograms fibs >>= print
