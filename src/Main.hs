@@ -3,6 +3,29 @@ module Main where
 import Control.Concurrent
 import Control.Monad
 
+fibs :: [Program Int]
+fibs = base : replicate 39 step
+  where
+    base :: Program Int
+    base = do
+      send 0
+      send 1
+      return 1
+    
+    step :: Program Int
+    step = do
+      x1 <- receive
+      x2 <- receive
+      send x2
+      let x3 = x1 + x2
+      send x3
+      return x3
+
+main :: IO ()
+main = runPrograms fibs >>= print
+
+
+
 runPrograms :: [Program a] -> IO [a]
 runPrograms progs = do
   channels <- replicateM (length progs + 1) newChan
@@ -53,7 +76,3 @@ instance Applicative Program where
 instance Monad Program where
   Return x   >>= f = f x
   Bind px cc >>= f = Bind px ((>>= f) <$> cc)
-
-
-main :: IO ()
-main = return ()
