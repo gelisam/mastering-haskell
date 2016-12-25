@@ -15,13 +15,13 @@ module Main where
 
 
 parMap :: (a -> Parallel b) -> [a] -> Parallel [b]
-parMap = undefined
+parMap = traverse
 
 parList :: [Parallel a] -> Parallel [a]
-parList = undefined
+parList = sequenceA
 
-parPair :: (Parallel a, Parallel b) -> Parallel (a,b)
-parPair = undefined
+parPair :: (Parallel a, Parallel b) -> Parallel (a, b)
+parPair (px, py) = (,) <$> px <*> py
 
 
 
