@@ -2,12 +2,12 @@
 module Main where
 
 
-
-
-
-
-
-
+instance Applicative Parallel where
+  pure = Parallel . pure
+  Parallel ioF <*> Parallel ioX = Parallel $ do
+    f <- ioF
+    x <- ioX
+    return (f x)
 
 
 
@@ -32,7 +32,7 @@ parPair (px, py) = (,) <$> px <*> py
 
 
 newtype Parallel a = Parallel { runParallel :: IO a }
-  deriving (Functor, Applicative)
+  deriving (Functor)
 
 main :: IO ()
 main = return ()
