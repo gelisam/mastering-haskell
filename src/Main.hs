@@ -17,9 +17,11 @@ instance Applicative (FreeAp f) where
   Ap fs fe <*> fx = Ap (flip <$> fs <*> fx) fe
 
 
+data TreeF a = Sub (Tree a)
+type Tree a = FreeAp TreeF a
 
-
-
+sub :: Tree a -> Tree a
+sub px = Ap (Pure id) (Sub px)
 
 
 
