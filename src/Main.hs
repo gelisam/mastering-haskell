@@ -2,16 +2,15 @@
 module Main where
 import Control.Concurrent
 
-fib :: Int -> Tree Integer
-fib 0 = pure 1
-fib 1 = pure 1
-fib n = (+) <$> sub (fib (n-1))
-            <*> sub (fib (n-2))
+parallelTree :: Tree a -> Parallel a
+parallelTree (Pure x)         = pure x
+parallelTree (Ap ts (Sub te)) = parallelTree ts
+                            <*> parallelTree te
 
-fib10 :: Tree Integer
-fib10 = (+) <$> sub ((+) <$> sub (fib 8) <*> sub (fib 7))
-            <*> sub ((+) <$> sub (fib 7) <*> sub (fib 6))
-
+sequentialTree :: Tree a -> a
+sequentialTree (Pure x)         = x
+sequentialTree (Ap ts (Sub te)) = sequentialTree ts
+                                $ sequentialTree te
 
 
 
