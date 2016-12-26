@@ -1,6 +1,31 @@
-{-# LANGUAGE BangPatterns, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE BangPatterns, GADTs, GeneralizedNewtypeDeriving #-}
 module Main where
 import Control.Concurrent
+
+-- ((f <$> fx) <*> fy) <*> fz
+data FreeAp f a where
+  Pure :: a -> FreeAp f a
+  Ap   :: FreeAp f (e -> a) -> f e -> FreeAp f a
+
+instance Functor (FreeAp f) where
+  fmap f (Pure x)   = Pure (f x)
+  fmap f (Ap fs fe) = Ap (fmap (fmap f) fs) fe
+
+instance Applicative (FreeAp f) where
+  pure = Pure
+  Pure f   <*> fx = fmap f fx
+  Ap fs fe <*> fx = Ap (flip <$> fs <*> fx) fe
+
+
+
+
+
+
+
+
+
+newtype Parallel a = Parallel { runParallel :: IO a }
+  deriving (Functor)
 
 instance Applicative Parallel where
   pure = Parallel . pure
@@ -14,27 +39,5 @@ instance Applicative Parallel where
     takeMVar varF <*> takeMVar varX
 
 
-fib :: Int -> Parallel Integer
-fib 0 = pure 1
-fib 1 = pure 1
-fib n | n < 20    = Parallel $ (+) <$> runParallel (fib (n-1))
-                                   <*> runParallel (fib (n-2))
-      | otherwise = (+) <$> fib (n-1) <*> fib (n-2)
-
-
-
 main :: IO ()
-main = do
-  r <- runParallel $ traverse fib [0..25]
-  print r
-
-
-
-
-
-
-
-
-
-newtype Parallel a = Parallel { runParallel :: IO a }
-  deriving (Functor)
+main = return ()
