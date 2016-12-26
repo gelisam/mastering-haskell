@@ -1,17 +1,17 @@
 {-# LANGUAGE BangPatterns, GeneralizedNewtypeDeriving #-}
 module Main where
-
+import Control.Concurrent
 
 instance Applicative Parallel where
   pure = Parallel . pure
   Parallel ioF <*> Parallel ioX = Parallel $ do
-    f <- ioF
-    x <- ioX
-    return (f x)
-
-
-
-
+    varF <- newEmptyMVar
+    varX <- newEmptyMVar
+    _ <- forkIO $ do !f <- ioF
+                     putMVar varF f
+    _ <- forkIO $ do !x <- ioX
+                     putMVar varX x
+    takeMVar varF <*> takeMVar varX
 
 
 parMap :: (a -> Parallel b) -> [a] -> Parallel [b]
