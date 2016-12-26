@@ -14,14 +14,14 @@ instance Applicative Parallel where
     takeMVar varF <*> takeMVar varX
 
 
-fib :: Int -> Integer
-fib 0 = 1
-fib 1 = 1
-fib n = fib (n-1) + fib (n-2)
+fib :: Int -> Parallel Integer
+fib 0 = pure 1
+fib 1 = pure 1
+fib n = (+) <$> fib (n-1) <*> fib (n-2)
 
 main :: IO ()
 main = do
-  r <- runParallel $ traverse (pure . fib) [0..25]
+  r <- runParallel $ traverse fib [0..25]
   print r
 
 
