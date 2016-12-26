@@ -14,14 +14,15 @@ instance Applicative Parallel where
     takeMVar varF <*> takeMVar varX
 
 
-parMap :: (a -> Parallel b) -> [a] -> Parallel [b]
-parMap = traverse
+fib :: Int -> Integer
+fib 0 = 1
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
 
-parList :: [Parallel a] -> Parallel [a]
-parList = sequenceA
-
-parPair :: (Parallel a, Parallel b) -> Parallel (a, b)
-parPair (px, py) = (,) <$> px <*> py
+main :: IO ()
+main = do
+  r <- runParallel $ traverse (pure . fib) [0..25]
+  print r
 
 
 
@@ -33,6 +34,3 @@ parPair (px, py) = (,) <$> px <*> py
 
 newtype Parallel a = Parallel { runParallel :: IO a }
   deriving (Functor)
-
-main :: IO ()
-main = return ()
