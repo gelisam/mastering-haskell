@@ -2,22 +2,18 @@
 module Main where
 import Control.Concurrent
 
-parallelTree :: Tree a -> Parallel a
-parallelTree (Pure x)         = pure x
-parallelTree (Ap ts (Sub te)) = parallelTree ts
-                            <*> parallelTree te
+fib :: Int -> Tree Integer
+fib 0 = pure 1
+fib 1 = pure 1
+fib n = (+) <$> sub (fib (n-1))
+            <*> sub (fib (n-2))
 
-sequentialTree :: Tree a -> a
-sequentialTree (Pure x)         = x
-sequentialTree (Ap ts (Sub te)) = sequentialTree ts
-                                $ sequentialTree te
-
-parallelUpToDepth :: Int -> Tree a -> Parallel a
-parallelUpToDepth 0 tx               = pure (sequentialTree tx)
-parallelUpToDepth _ (Pure x)         = pure x
-parallelUpToDepth d (Ap ts (Sub te)) = parallelUpToDepth d ts
-                                   <*> parallelUpToDepth (d-1) te
-
+main :: IO ()
+main = do
+  r <- runParallel
+     $ parallelUpToDepth 1
+     $ fib 10
+  print r
 
 
 
@@ -53,6 +49,23 @@ type Tree a = FreeAp TreeF a
 sub :: Tree a -> Tree a
 sub px = Ap (Pure id) (Sub px)
 
+parallelTree :: Tree a -> Parallel a
+parallelTree (Pure x)         = pure x
+parallelTree (Ap ps (Sub pe)) = parallelTree ps
+                            <*> parallelTree pe
+
+sequentialTree :: Tree a -> a
+sequentialTree (Pure x)         = x
+sequentialTree (Ap ps (Sub pe)) = sequentialTree ps
+                                $ sequentialTree pe
+
+parallelUpToDepth :: Int -> Tree a -> Parallel a
+parallelUpToDepth 0 px               = pure (sequentialTree px)
+parallelUpToDepth _ (Pure x)         = pure x
+parallelUpToDepth d (Ap ps (Sub pe)) = parallelUpToDepth d ps
+                                   <*> parallelUpToDepth (d-1) pe
+
+
 
 newtype Parallel a = Parallel { runParallel :: IO a }
   deriving (Functor)
@@ -64,10 +77,7 @@ instance Applicative Parallel where
     varX <- newEmptyMVar
     _ <- forkIO $ do !f <- ioF
                      putMVar varF f
-    _ <- forkIO $ do !x <- ioX
+    _ <- forkIO $ do putStrLn "forkIO"
+                     !x <- ioX
                      putMVar varX x
     takeMVar varF <*> takeMVar varX
-
-
-main :: IO ()
-main = return ()
