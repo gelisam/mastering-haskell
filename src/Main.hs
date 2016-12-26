@@ -9,8 +9,8 @@ fib n = (+) <$> fib (n-1)
             <*> fib (n-2)
 
 fib10 :: Tree Integer
-fib10 = (+) <$> fib 9
-            <*> fib 8
+fib10 = (+) <$> ((+) <$> fib 8 <*> fib 7)  --    [8,7]
+            <*> ((+) <$> fib 7 <*> fib 6)  -- ++ [7,6]
 
 
 
