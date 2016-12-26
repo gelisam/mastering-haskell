@@ -2,7 +2,33 @@
 module Main where
 import Control.Concurrent
 
--- ((f <$> fx) <*> fy) <*> fz
+fib :: Int -> Tree Integer
+fib 0 = pure 1
+fib 1 = pure 1
+fib n = (+) <$> fib (n-1)
+            <*> fib (n-2)
+
+fib10 :: Tree Integer
+fib10 = fib 10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 data FreeAp f a where
   Pure :: a -> FreeAp f a
   Ap   :: FreeAp f (e -> a) -> f e -> FreeAp f a
@@ -22,8 +48,6 @@ type Tree a = FreeAp TreeF a
 
 sub :: Tree a -> Tree a
 sub px = Ap (Pure id) (Sub px)
-
-
 
 
 newtype Parallel a = Parallel { runParallel :: IO a }
