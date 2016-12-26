@@ -12,7 +12,7 @@ main :: IO ()
 main = do
   r <- runParallel
      $ parallelUpToDepth 1
-     $ traverse fib [11..13]
+     $ traverse (sub . fib) [11..13]
   print r
 
 
