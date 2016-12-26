@@ -12,6 +12,11 @@ sequentialTree (Pure x)         = x
 sequentialTree (Ap ts (Sub te)) = sequentialTree ts
                                 $ sequentialTree te
 
+parallelUpToDepth :: Int -> Tree a -> Parallel a
+parallelUpToDepth 0 tx               = pure (sequentialTree tx)
+parallelUpToDepth _ (Pure x)         = pure x
+parallelUpToDepth d (Ap ts (Sub te)) = parallelUpToDepth d ts
+                                   <*> parallelUpToDepth (d-1) te
 
 
 
