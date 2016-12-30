@@ -3,11 +3,11 @@ module Main where
 import Control.Concurrent
 import System.IO.Unsafe
 
-fibPair :: (Integer, Integer)
-fibPair = (fib 10, fib 20)
+fibPair :: (Integer, [Integer])
+fibPair = (fib 10, [fib 20])
 
 parPair :: (a, b) -> Parallel (a, b)
-parPair (x, y) = pure (\y' -> (x,y')) <*> pure y
+parPair (x, y) = (,) <$> pure x <*> pure y
 
 
 
