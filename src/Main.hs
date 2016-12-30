@@ -4,7 +4,7 @@ import Control.Concurrent
 import System.IO.Unsafe
 
 fibPair :: (Integer, [Integer])
-fibPair = (fib 10, [fib 20])
+fibPair = (fib 10, let !fib20 = fib 20 in [fib20])
 
 parPair :: (a, b) -> Parallel (a, b)
 parPair (x, y) = (,) <$> pure x <*> pure y
