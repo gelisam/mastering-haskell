@@ -1,8 +1,36 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 import Control.Concurrent
-import Control.Monad
 import System.IO.Unsafe
+
+fibPair :: (Integer, Integer)
+fibPair = (fib 10, fib 20)
+
+parPair :: (a, b) -> Parallel (a, b)
+parPair (x, y) = (,) <$> pure x <*> pure y
+
+
+
+
+
+
+
+
+
+
+
+main :: IO ()
+main = traceThread "main" $ do
+  r <- runParallel $ parPair fibPair
+  print r
+
+
+
+
+
+
+
+
 
 traceThread :: String -> a -> a
 traceThread msg x = unsafePerformIO $ do
@@ -10,23 +38,29 @@ traceThread msg x = unsafePerformIO $ do
   putStrLn $ "[" ++ show threadId ++ "] " ++ msg
   return x
 
-parMap :: (a -> b) -> [a] -> [b]
-parMap f xs = unsafePerformIO $ do
-  vars <- forM xs $ \x -> do
-    var <- newEmptyMVar
-    _ <- forkIO $ traceThread "thread" $ do let y = f x
-                                            putMVar var y
-    return var
-  mapM readMVar vars
-
-main :: IO ()
-main = traceThread "main" $ do
-  let r = parMap (fib . traceThread "fib") [10,20]
-  print r
-
-
-
 fib :: Int -> Integer
-fib 0 = 1
-fib 1 = 1
-fib n = fib (n-1) + fib (n-2)
+fib x = traceThread "fib" (go x)
+  where
+    go 0 = 1
+    go 1 = 1
+    go n = go (n-1) + go (n-2)
+
+
+
+newtype Parallel a = Parallel { runParallel :: IO a }
+
+instance Functor Parallel where
+  fmap f (Parallel ioX) = Parallel (fmap f ioX)
+
+instance Applicative Parallel where
+  pure = Parallel . pure
+  Parallel ioF <*> Parallel ioX = Parallel $ do
+    varF <- newEmptyMVar
+    varX <- newEmptyMVar
+    _ <- forkIO $ traceThread "thread"
+                $ do !f <- ioF
+                     putMVar varF f
+    _ <- forkIO $ traceThread "thread"
+                $ do !x <- ioX
+                     putMVar varX x
+    takeMVar varF <*> takeMVar varX
