@@ -3,15 +3,15 @@ module Main where
 import Control.Concurrent
 import System.IO.Unsafe
 
-fibPair :: (Integer, [Integer])
-fibPair = (fib 10, let !fib20 = fib 20 in [fib20])
+fibPair :: (Integer, Integer)
+fibPair = (fib 10, fib 20)
 
 parPair :: (a, b) -> Parallel (a, b)
 parPair (x, y) = (,) <$> pure x <*> pure y
 
 
-
-
+instance Functor Parallel where
+  fmap f (Parallel ioX) = Parallel (fmap f ioX)
 
 
 
@@ -23,6 +23,7 @@ main :: IO ()
 main = traceThread "main" $ do
   r <- runParallel $ parPair fibPair
   print r
+
 
 
 
@@ -48,9 +49,6 @@ fib x = traceThread "fib" (go x)
 
 
 newtype Parallel a = Parallel { runParallel :: IO a }
-
-instance Functor Parallel where
-  fmap f (Parallel ioX) = Parallel (fmap f ioX)
 
 instance Applicative Parallel where
   pure = Parallel . pure
