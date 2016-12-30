@@ -11,8 +11,8 @@ parPair (x, y) = (,) <$> pure x <*> pure y
 
 
 instance Functor Parallel where
-  fmap f (Parallel ioX) = Parallel (fmap f ioX)
-
+  fmap f (Parallel ioX) = Parallel $ do x <- ioX
+                                        return (f x)
 
 
 
