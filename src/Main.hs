@@ -1,32 +1,27 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, RankNTypes #-}
 module Main where
 import Control.Concurrent
 import System.IO.Unsafe
 
 fib :: Int -> Integer
 fib n | n <= 1    = 1
-      | otherwise = x1 + x2
+      | otherwise = (+) <$!> x1 <*!> x2
   where
     x1 = traceThread "fib (n-1)" $ fib (n-1)
     x2 = traceThread "fib (n-2)" $ fib (n-2)
 
-parInteger :: Integer -> Parallel Integer
-parInteger = pure
 
+type Apply = forall a b. (a -> b) -> a -> b
 
+infixl 4 <$!>
+infixl 4 <*!>
 
+(<$!>) :: Apply
+(<$!>) = ($!)
 
-
-
-
-main :: IO ()
-main = traceThread "main" $ do
-  r <- runParallel $ parInteger $ fib 2
-  print r
-
-
-
-
+(<*!>) :: Apply
+(<*!>) f x = unsafePerformIO $ do
+  runParallel $ pure f <*> pure x
 
 
 
@@ -55,6 +50,11 @@ instance Applicative Parallel where
     _ <- forkIO $ traceThread "thread"
                 $ do !f <- ioF
                      putMVar varF f
-    _ <- forkIO $ do !x <- ioX
+    _ <- forkIO $ traceThread "thread"
+                $ do !x <- ioX
                      putMVar varX x
     takeMVar varF <*> takeMVar varX
+
+
+main :: IO ()
+main = traceThread "main" $ print $ fib 2
