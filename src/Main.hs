@@ -3,19 +3,26 @@ module Main where
 import Control.Concurrent
 import System.IO.Unsafe
 
-fib :: Apply -> Int -> Integer
-fib apply n | n <= 1    = 1
-            | otherwise = (+) <$!> x1 <*?> x2
+fib :: Trie -> Int -> Integer
+fib trie n | n <= 1    = 1
+           | otherwise = (+) <$!> x1 <*?> x2
   where
     infixl 4 <*?>
-    (<*?>) = apply
-    x1 = traceThread "fib (n-1)" $ fib apply (n-1)
-    x2 = traceThread "fib (n-2)" $ fib apply (n-2)
+    (<*?>) = current trie
+    x1 = traceThread "fib (n-1)" $ fib (left  trie) (n-1)
+    x2 = traceThread "fib (n-2)" $ fib (right trie) (n-2)
+
+data Trie = Trie { left :: Trie, current :: Apply, right :: Trie }
+
+sequential :: Trie
+sequential = Trie sequential ($) sequential
+
+upToDepth :: Int -> Trie
+upToDepth 0 = sequential
+upToDepth d = Trie (upToDepth (d-1)) (<*!>) (upToDepth (d-1))
 
 main :: IO ()
-main = traceThread "main" $ do
-  print $ fib ($) 2
-  print $ fib (<*!>) 2
+main = traceThread "main" $ print $ fib (upToDepth 2) 5
 
 
 
