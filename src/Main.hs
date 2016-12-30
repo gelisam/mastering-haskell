@@ -14,7 +14,7 @@ parMap :: (a -> b) -> [a] -> [b]
 parMap f xs = unsafePerformIO $ do
   vars <- forM xs $ \x -> do
     var <- newEmptyMVar
-    _ <- forkIO $ traceThread "thread" $ do let !y = f x
+    _ <- forkIO $ traceThread "thread" $ do let y = f x
                                             putMVar var y
     return var
   mapM readMVar vars
