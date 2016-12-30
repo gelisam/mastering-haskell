@@ -3,15 +3,15 @@ module Main where
 import Control.Concurrent
 import System.IO.Unsafe
 
-fibList :: [Integer]
-fibList = map fib [1..3]
+fib :: Int -> Integer
+fib n | n <= 1    = 1
+      | otherwise = x1 + x2
+  where
+    x1 = traceThread "fib (n-1)" $ fib (n-1)
+    x2 = traceThread "fib (n-2)" $ fib (n-2)
 
-parList :: [a] -> Parallel [a]
-parList = traverse pure
-
-
-
-
+parInteger :: Integer -> Parallel Integer
+parInteger = pure
 
 
 
@@ -21,7 +21,7 @@ parList = traverse pure
 
 main :: IO ()
 main = traceThread "main" $ do
-  r <- runParallel $ parList fibList
+  r <- runParallel $ parInteger $ fib 2
   print r
 
 
@@ -38,13 +38,6 @@ traceThread msg x = unsafePerformIO $ do
   threadId <- myThreadId
   putStrLn $ "[" ++ show threadId ++ "] " ++ msg
   return x
-
-fib :: Int -> Integer
-fib x = traceThread "fib" (go x)
-  where
-    go 0 = 1
-    go 1 = 1
-    go n = go (n-1) + go (n-2)
 
 
 
