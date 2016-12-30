@@ -3,16 +3,16 @@ module Main where
 import Control.Concurrent
 import System.IO.Unsafe
 
-fibPair :: (Integer, Integer)
-fibPair = (fib 10, fib 20)
+fibList :: [Integer]
+fibList = map fib [1..3]
 
-parPair :: (a, b) -> Parallel (a, b)
-parPair (x, y) = (,) <$> pure x <*> pure y
+parList :: [a] -> Parallel [a]
+parList = traverse pure
 
 
-instance Functor Parallel where
-  fmap f (Parallel ioX) = Parallel $ do !x <- ioX
-                                        return (f x)
+
+
+
 
 
 
@@ -21,7 +21,7 @@ instance Functor Parallel where
 
 main :: IO ()
 main = traceThread "main" $ do
-  r <- runParallel $ parPair fibPair
+  r <- runParallel $ parList fibList
   print r
 
 
@@ -50,6 +50,10 @@ fib x = traceThread "fib" (go x)
 
 newtype Parallel a = Parallel { runParallel :: IO a }
 
+instance Functor Parallel where
+  fmap f (Parallel ioX) = Parallel $ do !x <- ioX
+                                        return (f x)
+
 instance Applicative Parallel where
   pure = Parallel . pure
   Parallel ioF <*> Parallel ioX = Parallel $ do
@@ -58,7 +62,6 @@ instance Applicative Parallel where
     _ <- forkIO $ traceThread "thread"
                 $ do !f <- ioF
                      putMVar varF f
-    _ <- forkIO $ traceThread "thread"
-                $ do !x <- ioX
+    _ <- forkIO $ do !x <- ioX
                      putMVar varX x
     takeMVar varF <*> takeMVar varX
