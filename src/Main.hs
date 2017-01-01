@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE BangPatterns, RecordWildCards #-}
 module Main where
 import Control.Concurrent
 import Control.Monad
@@ -8,8 +8,29 @@ import System.IO
 main :: IO ()
 main = do
   counter <- newCounter
-  forever $ do increment counter
+  forever $ do runThreads $ replicate 2 $ increment counter
                printCounter counter
+
+runThreads :: [IO a] -> IO ()
+runThreads threads = do
+  vars <- forM threads $ \thread -> do
+    var <- newEmptyMVar
+    void $ forkFinally (do {!_ <- thread; putMVar var (Right ())})
+                       (putMVar var)
+    return var
+  rs <- mapM takeMVar vars
+  forM_ rs $ \r -> case r of
+    Left e -> error (show e)
+    Right _ -> return ()
+
+
+
+
+
+
+
+
+
 
 printCounter :: Counter -> IO ()
 printCounter (Counter {..}) = do
@@ -17,10 +38,6 @@ printCounter (Counter {..}) = do
   putStr $ show n ++ ", "
   hFlush stdout
   threadDelay (200 * 1000)
-
-
-
-
 
 
 
