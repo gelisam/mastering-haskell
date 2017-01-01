@@ -11,7 +11,7 @@ main = do
       sharedThunk = unsafeDupablePerformIO $ do
         increment counter
         return 42
-  let !_ = sharedThunk + sharedThunk
+  _ <- runParallel $ (+) <$> pure sharedThunk <*> pure sharedThunk
   printCounter counter
   main
 
