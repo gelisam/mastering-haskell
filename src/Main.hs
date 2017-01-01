@@ -7,22 +7,19 @@ import System.IO
 
 main :: IO ()
 main = do
-  counter <- newCounter
-  forever $ do runThreads $ replicate 2 $ increment counter
-               printCounter counter
+  counter1 <- newCounter
+  counter2 <- newCounter
+  forever $ do runThreads [ do takeMVar (mutex counter1)
+                               takeMVar (mutex counter2)
+                               putMVar  (mutex counter2) ()
+                               putMVar  (mutex counter1) ()
+                          , do takeMVar (mutex counter2)
+                               takeMVar (mutex counter1)
+                               putMVar  (mutex counter1) ()
+                               putMVar  (mutex counter2) ()
+                          ]
+               printCounter counter1
 
-data Counter = Counter { mutex  :: MVar ()
-                       , field1 :: IORef Int
-                       , field2 :: IORef Int
-                       }
-
-increment :: Counter -> IO ()
-increment c@(Counter {..}) = do takeMVar mutex
-                                assertInvariant c
-                                modifyIORef' field1 (+1)
-                                modifyIORef' field2 (+1)
-                                assertInvariant c
-                                putMVar mutex ()
 
 
 
@@ -53,6 +50,12 @@ runThreads threads = do
     Right _ -> return ()
 
 
+
+data Counter = Counter { mutex  :: MVar ()
+                       , field1 :: IORef Int
+                       , field2 :: IORef Int
+                       }
+
 newCounter :: IO Counter
 newCounter = Counter <$> newMVar () <*> newIORef 0 <*> newIORef 0
 
@@ -60,3 +63,11 @@ assertInvariant :: Counter -> IO ()
 assertInvariant (Counter {..}) = do r <- (==) <$> readIORef field1
                                               <*> readIORef field2
                                     when (not r) $ fail "violation"
+
+increment :: Counter -> IO ()
+increment c@(Counter {..}) = do takeMVar mutex
+                                assertInvariant c
+                                modifyIORef' field1 (+1)
+                                modifyIORef' field2 (+1)
+                                assertInvariant c
+                                putMVar mutex ()
