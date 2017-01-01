@@ -8,7 +8,7 @@ main :: IO ()
 main = do
   counter <- newCounter
   let sharedThunk :: Int
-      sharedThunk = unsafePerformIO $ do
+      sharedThunk = unsafeDupablePerformIO $ do
         increment counter
         return 42
   let !_ = sharedThunk + sharedThunk
