@@ -7,16 +7,11 @@ main :: IO ()
 main = go newCounter
   where
     go :: Counter -> IO ()
-    go c = do let c' = increment c
-              printCounter c'
-              go c'
-
-printCounter :: Counter -> IO ()
-printCounter (Counter _ n) = do
-  putStr $ show n ++ ", "
-  hFlush stdout
-  threadDelay (200 * 1000)
-
+    go c = do let pair = (increment c, increment c)
+              (c1,c2) <- runParallel $ parPair pair
+              printCounter c1
+              printCounter c2
+              go c1
 
 
 
@@ -45,6 +40,11 @@ increment = assertInvariant
           . (\(Counter m n) -> Counter (m+1) (n+1))
           . assertInvariant
 
+printCounter :: Counter -> IO ()
+printCounter (Counter _ n) = do
+  putStr $ show n ++ ", "
+  hFlush stdout
+  threadDelay (200 * 1000)
 
 
 newtype Parallel a = Parallel { runParallel :: IO a }
@@ -63,3 +63,6 @@ instance Applicative Parallel where
     _ <- forkIO $ do !x <- ioX
                      putMVar varX x
     takeMVar varF <*> takeMVar varX
+
+parPair :: (a, b) -> Parallel (a, b)
+parPair (x, y) = (,) <$> pure x <*> pure y
