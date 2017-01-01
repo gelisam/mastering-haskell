@@ -9,10 +9,14 @@ main = go newCounter
     go :: Counter -> IO ()
     go c = do let pair = (increment c, increment c)
               (c1,c2) <- runParallel $ parPair pair
-              printCounter c1
-              printCounter c2
-              go c1
+              let c' = mergeDeltas c c1 c2
+              printCounter c'
+              go c'
 
+mergeDeltas :: Counter -> Counter -> Counter -> Counter
+mergeDeltas (Counter m0 n0)
+            (Counter m1 n1)
+            (Counter m2 n2) = Counter (m1+m2-m0) (n1+n2-n0)
 
 
 
