@@ -1,6 +1,6 @@
 module Main where
 import Control.Concurrent
-
+import Control.Monad
 
 runInParallel :: IO a -> IO b -> IO (a,b)
 runInParallel ioX ioY = do
@@ -20,7 +20,8 @@ readIVar :: IVar a -> IO a
 readIVar var = readMVar var
 
 putIVar :: IVar a -> a -> IO ()
-putIVar var x = putMVar var x
+putIVar var x = do r <- tryPutMVar var x
+                   when (not r) $ fail "double put"
 
 
 
