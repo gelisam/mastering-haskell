@@ -4,12 +4,12 @@ module Main where
 --                          
 --    ...                   ...
 --    
---    writeIVar var x1
 --                          writeIVar var x2
+--    writeIVar var x1
 --    
---    ...                   ERROR
+--    ERROR                 ...
 --    
---    after
+--                          after
 
 
 
