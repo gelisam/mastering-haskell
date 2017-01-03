@@ -1,9 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 import Control.Concurrent
+import Control.DeepSeq
 import Control.Monad
 import System.IO.Unsafe
-
 
 
 cache :: [Integer]
@@ -19,7 +19,7 @@ fib     n | n <  10   = return (cache !! n)
 main :: IO ()
 main = traceThread "main" $ do
   
-  
+  void $ forkIO $ cache `deepseq` return ()
   runThreads $ [fib     11, fib     12]
 
 
@@ -41,10 +41,6 @@ noisyPlus x y = traceThread "cache" $ x + y
 
 runThreads :: [IO a] -> IO ()
 runThreads threads = do
-  -- spawn a dummy thread so that the thread numbers which
-  -- compute fib are the same in this slide and the next
-  void $ forkIO $ return ()
-  
   vars <- forM threads $ \thread -> do
     var <- newEmptyMVar
     void $ forkFinally (do {!_ <- thread; putMVar var (Right ())})
