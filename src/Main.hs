@@ -1,26 +1,17 @@
 module Main where
-import Prelude hiding (id, (.))
-import Control.Category
 import Control.Concurrent
 import Control.Monad
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.State
 
-newtype Pipeline a b = Pipeline { runPipeline :: IVar (MsgQueue a)
-                                              -> IVar (MsgQueue b)
-                                              -> IO ()
-                                }
 
-instance Category Pipeline where
-  id = Pipeline $ \qx qx' -> flip evalStateT qx'
-                           $ flip evalStateT qx
-                           $ forever
-                           $ nextMessage >>= lift . sendMessage
-  pyz . pxy = Pipeline $ \qx qz -> do
-    qy <- newIVar
-    void $ forkIO $ runPipeline pxy qx qy
-    void $ forkIO $ runPipeline pyz qy qz
+
+type Step a = IVar (Progress a) -> IO ()
+data Progress a = Done a | More (Step a)
+
+yield :: Step a -> Step a
+yield cc var = putIVar var (More cc)
+
+done :: a -> Step a
+done s var = putIVar var (Done s)
 
 
 
@@ -31,22 +22,6 @@ instance Category Pipeline where
 
 
 
-
-
-
-data MsgQueue s   = Cons s (IVar (MsgQueue s))
-type QueueT s m a = StateT (IVar (MsgQueue s)) m a
-
-sendMessage :: MonadIO m => s -> QueueT s m ()
-sendMessage s = do var <- get
-                   var' <- liftIO newIVar
-                   liftIO $ putIVar var $ Cons s var'
-
-nextMessage :: MonadIO m => QueueT s m s
-nextMessage = do var <- get
-                 Cons x var' <- liftIO $ readIVar var
-                 put var'
-                 return x
 
 
 
