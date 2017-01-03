@@ -4,8 +4,8 @@ module Main where
 --                          
 --    ...                   ...
 --    
---                          var2 <- newIVar
---    var1 <- newIVar
+--    x <- readIVar varX
+--                          y <- readIVar varY
 --    
 --    ...                   ...
 --    
