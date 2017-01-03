@@ -1,8 +1,33 @@
+{-# LANGUAGE LambdaCase #-}
 module Main where
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.State
+
+raceM :: MVar a -> MVar a -> IO a
+raceM var1 var2 = tryReadMVar var1 >>= \case
+  Just x  -> return x
+  Nothing -> tryReadMVar var2 >>= \case
+    Just x  -> return x
+    Nothing -> raceM var1 var2
+
+raceI :: IVar (Progress a) -> IVar (Progress a) -> IO a
+raceI var1 var2 = runStateT tryReadIVar var1 >>= \case
+  (Just x, _)      -> return x
+  (Nothing, var1') -> runStateT tryReadIVar var2 >>= \case
+    (Just x, _)      -> return x
+    (Nothing, var2') -> raceI var1' var2'
+
+
+
+
+
+
+
+
+
+
 
 type Step a = IVar (Progress a) -> IO ()
 data Progress a = Done a | More (Step a)
