@@ -4,12 +4,12 @@ module Main where
 --                          
 --    ...                   ...
 --    
---                          x <- readIVar var
---    x <- readIVar var
+--    writeIVar var x1
+--                          writeIVar var x2
 --    
---    ...                   ...
+--    ...                   ERROR
 --    
---    after                 after
+--    after
 
 
 
