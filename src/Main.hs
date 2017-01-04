@@ -4,9 +4,9 @@ module Main where
 --                          
 --    ...                   ...
 --    
---    writeIVar var x
 --                          x <- readIVar var
---    
+--                          BLOCKS
+--    writeIVar var x
 --    ...                   ...
 --    
 --    after                 after
