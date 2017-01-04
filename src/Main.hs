@@ -4,8 +4,8 @@ module Main where
 --                          
 --    ...                   ...
 --    
---                          y <- readIVar varY
---    x <- readIVar varX
+--    x <- readIVar var
+--                          x <- readIVar var
 --    
 --    ...                   ...
 --    
