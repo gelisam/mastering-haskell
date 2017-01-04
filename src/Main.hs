@@ -4,8 +4,8 @@ module Main where
 --                          
 --    ...                   ...
 --    
---                          x <- readIVar var
---                          BLOCKS
+--                          maybeX <- tryReadIVar var
+--                          case maybeX of ...
 --    writeIVar var x
 --    ...                   ...
 --    
