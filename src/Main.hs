@@ -5,22 +5,22 @@ import Control.DeepSeq
 import Control.Monad
 import System.IO.Unsafe
 
+mkCache :: IVar [Integer] -> IO ()
+mkCache var = traceThread "mkCache" $ do
+  let cache = take 10 $ 1:1:zipWith noisyPlus cache (tail cache)
+  let !_ = force cache
+  putIVar var cache
 
-cache :: [Integer]
-cache =       take 10 $ 1:1:zipWith noisyPlus cache (tail cache)
-
-
-
-fib :: Int -> IO Integer
-fib     n | n <  10   = return (cache !! n)
+fib :: IVar [Integer] -> Int -> IO Integer
+fib var n | n <  10   = (!! n) <$> readIVar var
           | otherwise = traceThread "fib"
-                      $ (+) <$> fib     (n-1) <*> fib     (n-2)
+                      $ (+) <$> fib var (n-1) <*> fib var (n-2)
 
 main :: IO ()
 main = traceThread "main" $ do
-  
-  void $ forkIO $ cache `deepseq` return ()
-  runThreads $ [fib     11, fib     12]
+  var <- newIVar
+  void $ forkIO $ mkCache var
+  runThreads $ [fib var 11, fib var 12]
 
 
 
