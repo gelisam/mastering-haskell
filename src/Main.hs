@@ -3,15 +3,15 @@ module Main where
 import Control.Concurrent
 
 parOr :: Bool -> Bool -> IO Bool
-parOr b1 b2 = raceI (return $ b1 || b2)
+parOr b1 b2 = raceL (return $ b1 || b2)
                     (return $ b2 || b1)
 
-raceI :: IO a -> IO a -> IO a
-raceI ioX1 ioX2 = do
-  var <- newIVar
-  _ <- forkIO $ do !x1 <- ioX1; putIVar var x1
-  _ <- forkIO $ do !x2 <- ioX2; putIVar var x2
-  readIVar var
+raceL :: Eq a => IO a -> IO a -> IO a
+raceL ioX1 ioX2 = do
+  var <- newLVar
+  _ <- forkIO $ do !x1 <- ioX1; putLVar var x1
+  _ <- forkIO $ do !x2 <- ioX2; putLVar var x2
+  readLVar var
 
 main :: IO ()
 main = do
@@ -48,15 +48,20 @@ fib n = fib (n-1) + fib (n-2)
 
 
 
-type IVar a = MVar a
+data LState a = Empty | Full a
+type LVar a = MVar (LState a)
 
-newIVar :: IO (IVar a)
-newIVar = newEmptyMVar
+newLVar :: IO (LVar a)
+newLVar = newMVar Empty
 
-readIVar :: IVar a -> IO a
-readIVar var = readMVar var
+readLVar :: LVar a -> IO a
+readLVar var = readMVar var >>= \r -> case r of
+                 Full x -> return x
+                 Empty  -> do yield
+                              readLVar var
 
-putIVar :: IVar a -> a -> IO ()
-putIVar var x = do r <- tryPutMVar var x
-                   if r then return ()
-                        else fail "double put"
+putLVar :: Eq a => LVar a -> a -> IO ()
+putLVar var x = takeMVar var >>= \r -> case r of
+                  Full x' | x == x' -> putMVar var (Full x)
+                  Empty             -> putMVar var (Full x)
+                  _                 -> fail "incompatible put"
