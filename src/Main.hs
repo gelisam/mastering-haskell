@@ -4,8 +4,8 @@ module Main where
 --                          
 --    ...                   ...
 --    
---    writeLVar var x
 --                          writeLVar var x
+--    writeLVar var x
 --    
 --    ...                   ...
 --    
