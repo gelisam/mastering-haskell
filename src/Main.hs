@@ -1,30 +1,12 @@
 module Main where
-
--- do before             do before
---                          
---    ...                   ...
---    
---                          writeLVar var x
---    writeLVar var x
---    
---    ...                   ...
---    
---    after                 after
+import Control.Monad
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+fib :: Int -> Integer
+fib 0 = 1
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
 
 main :: IO ()
-main = return ()
+main = forM_ [10,20,30,40] $ \n -> do
+  print (fib n > 100)
