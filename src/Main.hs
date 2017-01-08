@@ -1,12 +1,17 @@
 module Main where
 
--- do before             do before
---                          
---                          incrementLVar var
---                          incrementLVar var
---    2 <- freezeLVar var
---    
---    return 2
+
+data CmdI a = ReadI      | WriteI a
+data CmdF   = IncrementF | FreezeF
+data CmdE   = IncrementE | ReadEvenE
+
+
+
+
+
+
+
+
 
 
 
