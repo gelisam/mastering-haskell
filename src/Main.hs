@@ -4,12 +4,12 @@ module Main where
 --                          
 --    ...                   ...
 --    
+--                          x0 <- freezeLVar var
 --    incrementLVar var
---                          x1 <- freezeLVar var
 --    
---    ...                   ...
+--    ERROR                 ...
 --    
---    after                 after
+--                          after
 
 
 
