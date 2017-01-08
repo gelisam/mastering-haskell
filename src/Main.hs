@@ -2,10 +2,10 @@ module Main where
 
 -- do before             do before
 --                          
---    0 <- readLVar var
 --                          incrementLVar var
+--    1 <- readLVar var
 --    
---    return 0              return ()
+--    return 1              return ()
 
 
 
