@@ -3,10 +3,10 @@ module Main where
 -- do before             do before
 --                          
 --                          incrementLVar var
---    1 <- readEven var
---    ERROR                 incrementLVar var
+--                          incrementLVar var
+--    2 <- readEven var
 --    
---                          return ()
+--    return 2              return ()
 
 
 
