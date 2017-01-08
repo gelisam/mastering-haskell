@@ -1,20 +1,25 @@
+{-# LANGUAGE LambdaCase #-}
 module Main where
 import Control.Concurrent
-import Control.Monad
 
 
+data LState a = Empty | Full a
+type LVar a = MVar (LState a)
 
-type IVar a = MVar a
+newLVar :: IO (LVar a)
+newLVar = newMVar Empty
 
-newIVar :: IO (IVar a)
-newIVar = newEmptyMVar
+readLVar :: LVar a -> IO a
+readLVar var = readMVar var >>= \case
+                 Full x -> return x
+                 Empty  -> do yield
+                              readLVar var
 
-readIVar :: IVar a -> IO a
-readIVar var = readMVar var
-
-putIVar :: IVar a -> a -> IO ()
-putIVar var x = do r <- tryPutMVar var x
-                   when (not r) $ fail "double put"
+putLVar :: Eq a => LVar a -> a -> IO ()
+putLVar var x = takeMVar var >>= \case
+                  Full x' | x == x' -> putMVar var (Full x)
+                  Empty             -> putMVar var (Full x)
+                  _                 -> fail "incompatible put"
 
 
 
