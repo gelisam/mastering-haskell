@@ -1,11 +1,15 @@
 module Main where
+import Data.MultiSet as MultiSet
 
--- do before             do before
---                          
---                          incrementLVar var
---    1 <- readLVar var
---    
---    return 1              return ()
+
+data CmdE
+  = IncrementE
+  | ReadE
+
+class LVish c where
+  isAllowed :: c -> MultiSet c -> Bool
+
+
 
 
 
