@@ -3,10 +3,10 @@ module Main where
 -- do before             do before
 --                          
 --                          incrementLVar var
---    1 <- freezeLVar var
 --                          incrementLVar var
+--    2 <- freezeLVar var
 --    
---    return 1              ERROR
+--    return 2
 
 
 
