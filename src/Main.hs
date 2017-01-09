@@ -4,10 +4,10 @@ module Main where
 --    
 --                          apply c''' var
 --                          apply c''  var
---    x2 <- apply c var
+--    x1 <- apply c var
 --                          apply c'   var
---                          ERROR
---    ...
+--    
+--    ...                   ...
 
 stubborn :: Property
 stubborn = property $ \c cs (SomeR c')
