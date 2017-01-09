@@ -4,7 +4,7 @@ module Main where
 --                          
 --                          incrementLVar var
 --    1 <- readEven var
---    ERROR
+--    ERROR                 incrementLVar var
 --    
 --                          return ()
 
