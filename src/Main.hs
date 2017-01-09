@@ -2,14 +2,12 @@ module Main where
 
 -- do before             do before
 --                          
---    ...                   ...
+--    0 <- readEven var
+--                          incrementLVar var
 --    
---                          x0 <- freezeLVar var
---    incrementLVar var
---    
---    ERROR                 ...
---    
---                          after
+--    return 0              return ()
+
+
 
 
 
