@@ -6,9 +6,9 @@ data CmdI a r where
   Write :: a -> CmdI a ()
 
 data CmdF a r where
-  FreezeF    :: CmdF a a
-  IncrementF :: CmdF a ()
-  DecrementF :: CmdF a ()
+  FreezeF ::      CmdF a a
+  AddF    :: a -> CmdF a ()
+
 
 
 
