@@ -8,7 +8,5 @@ fib n = fib (n-1) + fib (n-2)
 main :: IO ()
 main = do
   putStrLn "go!"
-  print $ fib 10
-  print $ fib 20
-  print $ fib 30
-  print $ fib 40
+  print $ (fib 30 > 100) || (fib 40 > 100)
+  print $ (fib 40 > 100) || (fib 30 > 100)
