@@ -8,6 +8,7 @@ data CmdE
 
 class LVish c where
   isAllowed :: c -> MultiSet c -> Bool
+  result    :: c -> MultiSet c -> Maybe Result
 
 
 
@@ -26,7 +27,7 @@ class LVish c where
 
 
 
-
+data Result
 
 main :: IO ()
 main = return ()
