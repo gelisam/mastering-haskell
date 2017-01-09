@@ -3,8 +3,8 @@ module Main where
 -- do ...                   ...
 --    
 --                          apply c''' var
---                          apply c''  var
 --    x1 <- apply c var
+--                          apply c''  var
 --                          apply c'   var
 --    
 --    ...                   ...
