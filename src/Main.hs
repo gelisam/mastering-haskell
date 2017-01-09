@@ -1,14 +1,14 @@
+{-# LANGUAGE GADTs #-}
 module Main where
 import Data.MultiSet as MultiSet
 
-
-data CmdE
-  = IncrementE
-  | ReadE
+data CmdE r where
+  IncrementE :: CmdE ()
+  ReadE      :: CmdE Int
 
 class LVish c where
-  isAllowed :: c -> MultiSet c -> Bool
-  result    :: c -> MultiSet c -> Maybe Result
+  isAllowed :: c r -> MultiSet c -> Bool
+  result    :: c r -> MultiSet c -> Maybe r
 
 
 
@@ -27,7 +27,6 @@ class LVish c where
 
 
 
-data Result
 
 main :: IO ()
 main = return ()
