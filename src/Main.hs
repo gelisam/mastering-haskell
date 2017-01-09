@@ -17,9 +17,9 @@ data CmdI a r where
 
 
 
-
-
-
+data CmdM a r where
+  WaitM  :: (a -> Bool) -> CmdM a ()
+  Modify :: (a -> a)    -> CmdM a ()
 
 
 
