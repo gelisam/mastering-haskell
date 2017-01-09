@@ -9,9 +9,9 @@ data CmdF a r where
   FreezeF ::      CmdF a a
   AddF    :: a -> CmdF a ()
 
-
-
-
+data CmdL k a r where
+  LookupL :: k ->      CmdL k a a
+  InsertL :: k -> a -> CmdL k a ()
 
 
 
