@@ -5,10 +5,10 @@ data CmdI a r where
   ReadI ::      CmdI a a
   Write :: a -> CmdI a ()
 
-
-
-
-
+data CmdF a r where
+  FreezeF    :: CmdF a a
+  IncrementF :: CmdF a ()
+  DecrementF :: CmdF a ()
 
 
 
