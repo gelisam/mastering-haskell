@@ -13,9 +13,9 @@ data CmdL k a r where
   LookupL :: k ->      CmdL k a a
   InsertL :: k -> a -> CmdL k a ()
 
-
-
-
+data CmdC a r where
+  RegisterC :: (a -> IO ()) -> CmdC a ()
+  InsertC   :: a -> CmdC a ()
 
 data CmdM a r where
   WaitM  :: (a -> Bool) -> CmdM a ()
