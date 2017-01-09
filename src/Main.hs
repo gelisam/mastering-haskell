@@ -13,8 +13,8 @@ implies x y = y || not x
 -- prop> stubborn (WriteI True)
 -- prop> stubborn IncrementF
 -- prop> stubborn FreezeF
--- ----- stubborn IncrementE
--- ----- stubborn ReadEvenE
+-- prop> stubborn IncrementE
+-- prop> stubborn ReadEvenE
 stubborn :: (Arbitrary c, Ord c, Show c, LVish c)
          => c -> Property
 stubborn c = property $ \cs cs' -> isDisallowed c cs
