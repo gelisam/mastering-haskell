@@ -20,7 +20,7 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
-  killThread threadId
+  throwTo threadId (AssertionFailed "oops")
   print . either typeOfException show =<< takeMVar var
 
 
