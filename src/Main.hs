@@ -13,10 +13,10 @@ data CmdB = PutFst Bool  -- conflicts with (PutFst b') if b /= b'
           | ReadAnd      -- block until one False or two Trues
           | ReadOr       -- block until one True or two Falses
 
-
-
-
-
+-- Incrementing counter
+data CmdF = Freeze
+          | WaitUntil Natural    -- block until value is reached
+          | IncrementBy Natural  -- error if after Freeze
 
 
 
