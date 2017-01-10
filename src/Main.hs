@@ -17,6 +17,7 @@ stubborn c = property $ \cs (SomeR c')
           -> ( result c cs /= Nothing
             && isAllowed c' cs
             && isAllowed c (insert (SomeR c') cs)
+            && isAllowed c' (insert (SomeR c) cs)
              ) `implies` (
                result c (insert (SomeR c') cs)
             == result c cs
@@ -37,6 +38,10 @@ stubborn c = property $ \cs (SomeR c')
 
 implies :: Bool -> Bool -> Bool
 implies x y = y || not x
+
+
+isDisallowed :: LVish c => c a -> MultiSet (SomeR c) -> Bool
+isDisallowed c = not . isAllowed c
 
 
 
