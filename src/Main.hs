@@ -1,36 +1,37 @@
 module Main where
 import Control.Concurrent
 import Control.Exception.Base
-import Control.Monad
 import Data.Typeable
 
+data TooSlow = TooSlow deriving (Show, Typeable)
+instance Exception TooSlow
 
+raceM :: IO a -> IO a -> IO a
+raceM ioX1 ioX2 = do
+    var <- newEmptyMVar
+    [thread1,thread2] <- mapM (fork var) [ioX1,ioX2]
+    r <- either throw id <$> takeMVar var
+    mapM_ (flip throwTo TooSlow) [thread1, thread2]
+    return r
+  where
+    fork :: MVar (Either SomeException a) -> IO a -> IO ThreadId
+    fork var body = forkFinally body $ \r -> case r of
+      Left (SomeException e) | typeOf e == typeOf TooSlow
+        -> return ()
+      _ -> putMVar var r
 
 main :: IO ()
-main = do
-  var <- newEmptyMVar
-  threadId <- flip forkFinally (putMVar var) $ do
-    replicateM_ 4 $ do
-      sleep 0.5
-      putStrLn "thread"
-    return (42 :: Int)
-  
-  sleep 0.25
-  
-  replicateM_ 2 $ do
-    sleep 0.5
-    putStrLn "main"
-  throwTo threadId (AssertionFailed "oops")
-  print . either typeOfException show =<< takeMVar var
+main = do print =<< parOr (fib 30 > 100) (fib 40 > 100)
+          print =<< parOr (fib 40 > 100) (fib 30 > 100)
 
 
 
 
+parOr :: Bool -> Bool -> IO Bool
+parOr b1 b2 = raceM (evaluate $ b1 || b2)
+                    (evaluate $ b2 || b1)
 
--- See Volume 1, Video 1.3
-typeOfException :: SomeException -> String
-typeOfException (SomeException e) = show (typeOf e)
-
--- like threadDelay, but using seconds instead of microseconds
-sleep :: Double -> IO ()
-sleep seconds = threadDelay $ round $ seconds * 1000 * 1000
+fib :: Int -> Integer
+fib 0 = 1
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
