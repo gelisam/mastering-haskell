@@ -9,11 +9,10 @@ import Data.Typeable
 main :: IO ()
 main = do
   var <- newEmptyMVar
-  _ <- flip forkFinally (putMVar var) $ do
+  threadId <- flip forkFinally (putMVar var) $ do
     replicateM_ 4 $ do
       sleep 0.5
       putStrLn "thread"
-      undefined  -- throws "ErrorCall"
     return (42 :: Int)
   
   sleep 0.25
@@ -21,6 +20,7 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
+  killThread threadId
   print . either typeOfException show =<< takeMVar var
 
 
