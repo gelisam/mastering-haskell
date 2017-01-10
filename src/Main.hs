@@ -13,7 +13,7 @@ main = do
     replicateM_ 4 $ do
       sleep 0.5
       putStrLn "thread"
-    putMVar var ()
+    putMVar var (42 :: Int)
   
   sleep 0.25
   
@@ -21,4 +21,4 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
-  takeMVar var
+  print =<< takeMVar var
