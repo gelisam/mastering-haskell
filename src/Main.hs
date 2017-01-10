@@ -1,20 +1,20 @@
 module Main where
 import Control.Concurrent
+import Control.Exception.Base
 
-
-
-
+withThread :: IO () -> (ThreadId -> IO a) -> IO a
+withThread body = bracket (forkIO body) killThread
 
 main :: IO ()
 main = do
-    thread1 <- forkIO $ do
-        _ <- forkIO $ do
+    withThread (do
+        withThread (do
             sleep 1.0
-            putStrLn "thread2"
-        
+            putStrLn "thread2")
+      $ \_ -> do
         sleep 1.0
-        putStrLn "thread1"
-    
+        putStrLn "thread1")
+  $ \thread1 -> do
     
     sleep 0.5
     killThread thread1
