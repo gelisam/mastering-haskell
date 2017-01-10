@@ -2,14 +2,12 @@ module Main where
 
 -- do before             do before
 --                          
---    ...                   ...
---    
---    x0 <- freeze
+--    0 <- freeze
+--                          increment
+--                          increment
 --                          increment
 --    
---    ...                   ERROR
---    
---    after
+--    return 0              ERROR
 
 
 
