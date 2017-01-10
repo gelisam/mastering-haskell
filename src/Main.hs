@@ -4,12 +4,12 @@ module Main where
 --                          
 --    ...                   ...
 --    
+--    x0 <- freeze
 --                          increment
---    x1 <- freeze
 --    
---    ...                   ...
+--    ...                   ERROR
 --    
---    after                 after
+--    after
 
 
 
