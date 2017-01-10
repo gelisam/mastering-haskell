@@ -6,8 +6,8 @@ import Test.QuickCheck
 -- |
 -- prop> stubborn ReadI
 -- prop> stubborn (WriteI True)
--- ----- stubborn IncrementF
--- ----- stubborn FreezeF
+-- prop> stubborn IncrementF
+-- prop> stubborn FreezeF
 -- ----- stubborn IncrementE
 -- ----- stubborn ReadE
 stubborn :: ( Arbitrary (SomeR c), Ord (SomeR c), Show (SomeR c)
@@ -21,8 +21,6 @@ stubborn c = property $ \cs (SomeR c')
                result c (insert (SomeR c') cs)
             == result c cs
              )
-
-
 
 
 
