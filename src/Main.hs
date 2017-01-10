@@ -8,8 +8,8 @@ import Test.QuickCheck
 -- prop> stubborn (WriteI True)
 -- prop> stubborn IncrementF
 -- prop> stubborn FreezeF
--- ----- stubborn IncrementE
--- ----- stubborn ReadE
+-- prop> stubborn IncrementE
+-- prop> stubborn ReadE
 stubborn :: ( Arbitrary (SomeR c), Ord (SomeR c), Show (SomeR c)
             , LVish c, Eq a )
          => c a -> Property
