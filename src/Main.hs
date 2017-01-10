@@ -4,10 +4,10 @@ module Main where
 --                          
 --                          increment
 --                          increment
---    2 <- freeze
 --                          increment
+--    3 <- freeze
 --    
---    return 2              ERROR
+--    return 3
 
 
 
