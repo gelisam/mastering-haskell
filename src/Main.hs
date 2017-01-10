@@ -3,11 +3,11 @@ module Main where
 -- do before             do before
 --                          
 --                          increment
---    1 <- freeze
 --                          increment
+--    2 <- freeze
 --                          increment
 --    
---    return 1              ERROR
+--    return 2              ERROR
 
 
 
