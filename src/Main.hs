@@ -22,7 +22,7 @@ raceM ioX1 ioX2 = do
 
 main :: IO ()
 main = do print =<< parOr (fib 30 > 100) (fib 40 > 100)
-          print =<< parOr (fib 40 > 100) (fib 30 > 100)
+          print =<< parOr (fib 40 > 100) (fib 30 > undefined)
 
 
 
