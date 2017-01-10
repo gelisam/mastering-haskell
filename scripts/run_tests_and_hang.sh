@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-stack exec -- doctest -XFlexibleContexts src/Main.hs &
+course &
 
 # wait for the child process to terminate
 wait
