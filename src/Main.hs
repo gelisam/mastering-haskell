@@ -18,10 +18,10 @@ data CmdF = Freeze
           | WaitUntil Natural    -- block until value is reached
           | IncrementBy Natural  -- error if after Freeze
 
-
-
-
-
+-- Map k a
+data CmdL k a = Lookup k    -- block until (Insert k)
+              | Insert k a  -- conflicts with (Insert k' x')
+                            -- if k == k' but x /= x'
 
 
 
