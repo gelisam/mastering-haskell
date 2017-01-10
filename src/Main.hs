@@ -18,6 +18,6 @@ main = do
   sleep 0.25
   
   
-  replicateM_ 4 $ do
+  replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
