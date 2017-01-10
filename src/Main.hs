@@ -13,10 +13,10 @@ main = do
     replicateM_ 4 $ do
       sleep 0.5
       putStrLn "thread"
+      undefined  -- throws "ErrorCall"
     putMVar var (42 :: Int)
   
   sleep 0.25
-  
   
   replicateM_ 2 $ do
     sleep 0.5
