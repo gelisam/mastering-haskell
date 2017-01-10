@@ -21,7 +21,7 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
-  print . either throw id =<< takeMVar var
+  print . either typeOfException show =<< takeMVar var
 
 
 
