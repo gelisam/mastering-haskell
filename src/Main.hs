@@ -4,7 +4,9 @@ module Main where
 --    
 --    x <- apply c var
 --    
---                          apply c' var
+--                          apply c''' var
+--                          apply c''  var
+--                          apply c'   var
 --    
 --    ...                   ...
 
