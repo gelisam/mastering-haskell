@@ -2,8 +2,9 @@ module Main where
 import Prelude hiding ((||))
 
 (||) :: Bool -> Bool -> Bool
-True  || _ = True
-False || b = b
+True  || _    = True
+_     || True = True
+_     || _    = False
 
 main :: IO ()
 main = do
