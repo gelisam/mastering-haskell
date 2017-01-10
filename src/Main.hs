@@ -1,30 +1,36 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 import Control.Concurrent
 import Control.Monad
+import Control.Monad.Loops
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Cont
 
+slowDouble :: Int -> ContT () Program Int
+slowDouble x = do lift $ printInt x
+                  lift $ printStr "doubling"
+                  syncAdd x x
+
 main :: IO ()
-main = do
-  runProgram $ evalContT $ do
-    lift $ printStr "2 + 2 = ?"; syncAdd 2 2 >>= lift . printInt
-    lift $ printStr "3 + 3 = ?"; syncAdd 3 3 >>= lift . printInt
-    lift $ printStr "4 + 4 = ?"; syncAdd 4 4 >>= lift . printInt
-    return ()
-  forever $ sleep 1
+main = do runProgram $ evalContT $ do
+            x <- iterateUntilM (> 100) slowDouble 1
+            lift $ printInt x
+            lift $ printStr "done"
+          forever $ sleep 1
+
+
+
+
+
+
+
+
+
+
+
+
 
 syncAdd :: Int -> Int -> ContT () Program Int
-syncAdd x1 x2 = ContT $ \(cc :: Int -> Program ())
-             -> asyncAdd x1 x2 cc
-
-
-
-
-
-
-
-
+syncAdd x1 x2 = ContT $ asyncAdd x1 x2
 
 
 
