@@ -1,14 +1,14 @@
 module Main where
 import Control.Concurrent
+import Control.Concurrent.Async
 import Control.Exception.Base
 import Control.Monad
 import Data.Typeable
 
-
 main :: IO ()
 main = do
-  var <- newEmptyMVar
-  _ <- flip forkFinally (putMVar var) $ do
+  
+  asyncX <- async $ do
     replicateM_ 4 $ do
       sleep 0.5
       putStrLn "thread"
@@ -20,7 +20,7 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
-  print . either typeOfException show =<< takeMVar var
+  print . either typeOfException show =<< waitCatch asyncX
 
 
 
