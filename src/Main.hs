@@ -1,13 +1,13 @@
 module Main where
-
+import Control.Concurrent.Async
 
 handle :: Request -> IO Response
 handle request = do
   TransferFunds amount account1 account2 <- parseBody request
-  logForDebugging      request
-  logForFaultTolerance request
-  logForAudit          request
-  
+  _ <- mapConcurrently ($ request) [ logForDebugging
+                                   , logForFaultTolerance
+                                   , logForAudit
+                                   ]
   Bearer token <- getBearerToken request
   userId <- lookupTokenOwner token
   userId' <- lookupAccountOwner account1
