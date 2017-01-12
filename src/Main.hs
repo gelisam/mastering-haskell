@@ -20,7 +20,7 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
-  print . either typeOfException show =<< waitCatch asyncX
+  print =<< wait asyncX
 
 
 
