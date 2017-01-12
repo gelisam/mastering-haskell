@@ -12,14 +12,14 @@ handle request = do
   TransferFunds amount account1 account2 <- wait asyncBody
   userId' <- lookupAccountOwner account1
   if userId == userId'
-  then do mutex <- lockAccount account1
-          balance <- getBalance account1
-          r <- if balance >= amount
-               then do debitAmount account1 amount
-                       creditAmount account2 amount
-                       return $ Response 200 "OK"
-               else return $ Response 400 "Insufficient funds"
-          unlock mutex
+  then do asyncMutex <- async $ lockAccount account1  --  ----.
+          balance <- getBalance account1              --      |
+          r <- if balance >= amount                   --      |
+               then do debitAmount account1 amount    --      |
+                       creditAmount account2 amount   --      |
+                       return $ Response 200 "OK"     --      |
+               else return $ Response 400 "Nope"      --      |
+          unlock =<< wait asyncMutex  --  <-------------------'
           return r
   else return $ Response 401 "Unauthorized"
   
