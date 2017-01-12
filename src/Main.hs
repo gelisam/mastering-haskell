@@ -1,20 +1,21 @@
 module Main where
 import Control.Concurrent
 import Control.Monad
-import Control.Monad.Loops
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.Cont
 
-slowDouble :: Int -> ContT () Program Int
-slowDouble x = do lift $ printInt x
-                  lift $ printStr "doubling"
-                  syncAdd x x
+
+
+asyncDouble :: Int -> (Int -> Program ()) -> Program ()
+asyncDouble x cc = do printInt x
+                      printStr "doubling"
+                      asyncAdd x x cc
 
 main :: IO ()
-main = do runProgram $ evalContT $ do
-            x <- iterateUntilM (> 100) slowDouble 1
-            lift $ printInt x
-            lift $ printStr "done"
+main = do runProgram $ do
+            let loop x | x > 100   = do printInt x
+                                        printStr "done"
+                       | otherwise = asyncDouble x loop
+            loop 1
           forever $ sleep 1
 
 
