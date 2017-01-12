@@ -1,22 +1,27 @@
 module Main where
 import Control.Concurrent
-import Control.Monad
-import Control.Monad.Trans.Cont
+import Control.Exception.Base
 
 
 
-asyncDouble :: Int -> (Int -> Program ()) -> Program ()
-asyncDouble x cc = do printInt x
-                      printStr "doubling"
-                      asyncAdd x x cc
+withThread :: IO () -> (ThreadId -> IO a) -> IO a
+withThread body = bracket (forkIO body) killThread
 
 main :: IO ()
-main = do runProgram $ do
-            let loop x | x > 100   = do printInt x
-                                        printStr "done"
-                       | otherwise = asyncDouble x loop
-            loop 1
-          forever $ sleep 1
+main = do
+    withThread (do
+        withThread (do
+            sleep 1.0
+            putStrLn "thread2")
+      $ \_ -> do
+        sleep 1.0
+        putStrLn "thread1")
+  $ \thread1 -> do
+    sleep 0.5
+    killThread thread1
+    
+    sleep 1.0
+    putStrLn "main"
 
 
 
@@ -24,66 +29,9 @@ main = do runProgram $ do
 
 
 
-
-
-
-
-
-
-syncAdd :: Int -> Int -> ContT () Program Int
-syncAdd x1 x2 = ContT $ asyncAdd x1 x2
-
-
-
-data Command = AsyncAdd Int Int (Int -> Program ())
-             | PrintStr String
-             | PrintInt Int
-
-runCommand :: Command -> IO ()
-runCommand (AsyncAdd x1 x2 cc) = ioAsyncAdd x1 x2 (runProgram . cc)
-runCommand (PrintStr s)        = putStrLn s
-runCommand (PrintInt x)        = print x
-
-data Program a = Done a
-               | More Command (Program a)
-
-runProgram :: Program a -> IO a
-runProgram (Done x)    = return x
-runProgram (More c px) = runCommand c >> runProgram px
-
-asyncAdd :: Int -> Int -> (Int -> Program ()) -> Program ()
-asyncAdd x1 x2 cc = More (AsyncAdd x1 x2 cc) (Done ())
-
-printStr :: String -> Program ()
-printStr s = More (PrintStr s) (Done ())
-
-printInt :: Int -> Program ()
-printInt x = More (PrintInt x) (Done ())
-
-
-
-instance Functor Program where
-  fmap f (Done x)    = Done (f x)
-  fmap f (More c px) = More c (fmap f px)
-
-instance Applicative Program where
-  pure = Done
-  (<*>) = ap
-
-instance Monad Program where
-  Done x    >>= f = f x
-  More c px >>= f = More c (px >>= f)
 
 
 
 -- like threadDelay, but using seconds instead of microseconds
 sleep :: Double -> IO ()
 sleep seconds = threadDelay $ round $ seconds * 1000 * 1000
-
-slowAdd :: Int -> Int -> IO Int
-slowAdd x1 x2 = do
-  sleep 0.35
-  return $ x1 + x2
-
-ioAsyncAdd :: Int -> Int -> (Int -> IO ()) -> IO ()
-ioAsyncAdd x1 x2 cc = void $ forkIO $ slowAdd x1 x2 >>= cc
