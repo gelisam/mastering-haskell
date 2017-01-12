@@ -1,16 +1,48 @@
+{-# LANGUAGE BangPatterns #-}
 module Main where
-import Control.Concurrent.Async
-import Control.Exception.Base
+import Control.Concurrent
+
+fibPair :: (Integer, Integer)
+fibPair = (fib 10, fib 20)
+
+parPair :: (a, b) -> Parallel (a, b)
+parPair (x, y) = (,) <$> pure x
+                     <*> pure y
+
+main :: IO ()
+main = do
+  r <- runParallel $ parPair fibPair
+  print r
+
+
+
+
+
+
+
+
+
 
 fib :: Int -> Integer
 fib 0 = 1
 fib 1 = 1
 fib n = fib (n-1) + fib (n-2)
 
-parOr :: Bool -> Bool -> IO Bool
-parOr b1 b2 = either id id <$> race (evaluate $ b1 || b2)
-                                    (evaluate $ b2 || b1)
 
-main :: IO ()
-main = do print =<< parOr (fib 30 > 100) (fib 40 > 100)
-          print =<< parOr (fib 40 > 100) (fib 30 > 100)
+
+newtype Parallel a = Parallel { runParallel :: IO a }
+
+instance Functor Parallel where
+  fmap f (Parallel ioX) = Parallel $ do !x <- ioX
+                                        return (f x)
+
+instance Applicative Parallel where
+  pure = Parallel . pure
+  Parallel ioF <*> Parallel ioX = Parallel $ do
+    varF <- newEmptyMVar
+    varX <- newEmptyMVar
+    _ <- forkIO $ do !f <- ioF
+                     putMVar varF f
+    _ <- forkIO $ do !x <- ioX
+                     putMVar varX x
+    takeMVar varF <*> takeMVar varX
