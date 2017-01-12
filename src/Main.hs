@@ -12,7 +12,6 @@ main = do
     replicateM_ 4 $ do
       sleep 0.5
       putStrLn "thread"
-      undefined  -- throws "ErrorCall"
     return (42 :: Int)
   
   sleep 0.25
@@ -20,7 +19,8 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
-  print =<< wait asyncX
+  cancel asyncX
+  print . either typeOfException show =<< waitCatch asyncX
 
 
 
