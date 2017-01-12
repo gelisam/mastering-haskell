@@ -1,27 +1,27 @@
 module Main where
 import Control.Concurrent
 import Control.Exception.Base
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Cont
 
-fork :: ContT () IO () -> ContT r IO ThreadId
-fork = ContT . withThread . evalContT
+syncThread :: IO () -> IO ThreadId
+syncThread body = do var <- newEmptyMVar
+                     withThread body (putMVar var)
+                     takeMVar var
 
 main :: IO ()
-main = evalContT $ do
-  thread1 <- fork $ do
-    _ <- fork $ do
-      lift $ sleep 1.0
-      lift $ putStrLn "thread2"
+main = do
+  thread1 <- syncThread $ do
+    _ <- syncThread $ do
+      sleep 1.0
+      putStrLn "thread2"
     
-    lift $ sleep 1.0
-    lift $ putStrLn "thread1"
+    sleep 1.0
+    putStrLn "thread1"
   
-  lift $ sleep 0.5
-  lift $ killThread thread1
+  sleep 0.5
+  killThread thread1
   
-  lift $ sleep 1.0
-  lift $ putStrLn "main"
+  sleep 1.0
+  putStrLn "main"
 
 
 
