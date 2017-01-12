@@ -1,35 +1,16 @@
 module Main where
-import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Exception.Base
-import Control.Monad
-import Data.Typeable
+
+fib :: Int -> Integer
+fib 0 = 1
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
+
+parOr :: Bool -> Bool -> IO Bool
+parOr b1 b2 = either id id <$> race (evaluate $ b1 || b2)
+                                    (evaluate $ b2 || b1)
 
 main :: IO ()
-main = do
-  
-  asyncX <- async $ do
-    replicateM_ 4 $ do
-      sleep 0.5
-      putStrLn "thread"
-    return (42 :: Int)
-  
-  sleep 0.25
-  
-  replicateM_ 2 $ do
-    sleep 0.5
-    putStrLn "main"
-  cancelWith asyncX (AssertionFailed "oops")
-  print . either typeOfException show =<< waitCatch asyncX
-
-
-
-
-
--- See Volume 1, Video 1.3
-typeOfException :: SomeException -> String
-typeOfException (SomeException e) = show (typeOf e)
-
--- like threadDelay, but using seconds instead of microseconds
-sleep :: Double -> IO ()
-sleep seconds = threadDelay $ round $ seconds * 1000 * 1000
+main = do print =<< parOr (fib 30 > 100) (fib 40 > 100)
+          print =<< parOr (fib 40 > 100) (fib 30 > 100)
