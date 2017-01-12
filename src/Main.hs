@@ -19,7 +19,7 @@ main = do
   replicateM_ 2 $ do
     sleep 0.5
     putStrLn "main"
-  cancel asyncX
+  cancelWith asyncX (AssertionFailed "oops")
   print . either typeOfException show =<< waitCatch asyncX
 
 
