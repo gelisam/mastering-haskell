@@ -4,17 +4,17 @@ import Control.Monad
 
 main :: IO ()
 main = do
-  runProgram $ do
-    printStr "2 + 2 = ?"; asyncAdd 2 2 printInt
-    printStr "3 + 3 = ?"; asyncAdd 3 3 printInt
-    printStr "4 + 4 = ?"; asyncAdd 4 4 printInt
+  
+  putStrLn "2 + 2 = ?"; syncAdd 2 2 >>= print
+  putStrLn "3 + 3 = ?"; syncAdd 3 3 >>= print
+  putStrLn "4 + 4 = ?"; syncAdd 4 4 >>= print
   forever $ sleep 1
 
-
-
-
-
-
+syncAdd :: Int -> Int -> IO Int
+syncAdd x1 x2 = do
+  var <- newEmptyMVar
+  runProgram $ asyncAdd x1 x2 (putMVar var)
+  takeMVar var
 
 
 
