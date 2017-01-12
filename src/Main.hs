@@ -1,16 +1,16 @@
 module Main where
-
+import Control.Concurrent.Async
 
 handle :: Request -> IO Response
 handle request = do
-  TransferFunds amount account1 account2 <- parseBody request
+  asyncBody <- async $ parseBody request  --  ----.
   logForDebugging      request            --      |
   logForFaultTolerance request            --      |
   logForAudit          request            --      |
-                                          --      |
   Bearer token <- getBearerToken request  --      |
-  userId <- lookupTokenOwner token        --      |
-  userId' <- lookupAccountOwner account1  --  <---'
+  userId <- lookupTokenOwner token        --      v
+  TransferFunds amount account1 account2 <- wait asyncBody
+  userId' <- lookupAccountOwner account1
   if userId == userId'
   then do mutex <- lockAccount account1
           balance <- getBalance account1
