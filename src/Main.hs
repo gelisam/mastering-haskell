@@ -10,8 +10,8 @@ mkInt :: Int -> Cont String Int
 mkInt x = round <$> mkDouble (fromIntegral x)
 
 mkDouble :: Double -> Cont String Double
+mkDouble 1 = cont $ \_ -> "short-circuit!"
 mkDouble x = return $ 1.5 * x
-
 
 
 
