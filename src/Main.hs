@@ -10,7 +10,7 @@ mkInt :: Int -> Cont String Int
 mkInt x = round <$> mkDouble (fromIntegral x)
 
 mkDouble :: Double -> Cont String Double
-mkDouble 1 = cont $ \cc -> cc 5
+mkDouble 1 = cont $ \cc -> cc 5 ++ "!"
 mkDouble x = return $ 1.5 * x
 
 
