@@ -1,5 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Main where
-
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.Trans.Class
@@ -15,7 +15,8 @@ main = do
   forever $ sleep 1
 
 syncAdd :: Int -> Int -> ContT () Program Int
-syncAdd x1 x2 = ContT $ asyncAdd x1 x2
+syncAdd x1 x2 = ContT $ \(cc :: Int -> Program ())
+             -> asyncAdd x1 x2 cc
 
 
 
