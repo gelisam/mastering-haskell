@@ -1,20 +1,24 @@
 module Main where
-import Control.Concurrent
-import Control.Monad
-import Data.List
-import Debug.Trace
-import Text.Printf
-                                            --                .----
-main :: IO ()                               --                |
-main = do                                   --                |
-  forM_ (qsort [4,2,7,8,1,6,3]) $ \x -> do  --                |
-    print x                                 --                |
-    sleep 0.8                               --                |
-                                            --                |
-                                            --                |
-                                            --                |
-                                            --                |
-                                            --                '--->
+
+
+
+
+main :: IO ()
+main = do
+  xs <- produceXS      --  ----.
+                       --      |
+  doStuff1             --      |
+  doStuff2             --      |
+  doStuff3             --      |
+                       --      |
+  xs' <- processXS xs  --  <---'
+                 --  \ 
+                 --   |
+  doStuff4       --   |
+  doStuff5       --   |
+  doStuff6       --   |
+                 --   |
+  consumeXS' xs' -- <-'
 
 
 
@@ -27,19 +31,38 @@ main = do                                   --                |
 
 
 
-qsort :: [Int] -> [Int]
-qsort []     = []
-qsort [x]    = [x]
-qsort (x:xs) = trace (printf "%s: partition (< %s) %s"
-                       (show (x:xs)) (show x) (show xs))
-             $ let (xsLT, xsGE) = partition (`noisyLT` x) xs
-               in qsort xsLT ++ [x] ++ qsort xsGE
-
-noisyLT :: Int -> Int -> Bool
-noisyLT x y = trace (printf "%d < %d" x y) (x < y)
 
 
 
--- like threadDelay, but using seconds instead of microseconds
-sleep :: Double -> IO ()
-sleep seconds = threadDelay $ round $ seconds * 1000 * 1000
+
+
+
+data XS  = XS
+data XS' = XS'
+
+produceXS :: IO XS
+produceXS = return XS
+
+doStuff1 :: IO ()
+doStuff1 = return ()
+
+doStuff2 :: IO ()
+doStuff2 = return ()
+
+doStuff3 :: IO ()
+doStuff3 = return ()
+
+processXS :: XS -> IO XS'
+processXS XS = return XS'
+
+doStuff4 :: IO ()
+doStuff4 = return ()
+
+doStuff5 :: IO ()
+doStuff5 = return ()
+
+doStuff6 :: IO ()
+doStuff6 = return ()
+
+consumeXS' :: XS' -> IO ()
+consumeXS' XS' = return ()
