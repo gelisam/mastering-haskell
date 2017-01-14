@@ -4,19 +4,17 @@ import Control.Monad
 import Data.List
 import Debug.Trace
 import Text.Printf
-
-main :: IO ()
-main = do
-  forM_ (qsort [4,2,7,8,1,6,3]) $ \x -> do
-    print x
-    sleep 0.8
-
-
-
-
-
-
-
+                                            --                .----
+main :: IO ()                               --                |
+main = do                                   --                |
+  forM_ (qsort [4,2,7,8,1,6,3]) $ \x -> do  --                |
+    print x                                 --                |
+    sleep 0.8                               --                |
+                                            --                |
+                                            --                |
+                                            --                |
+                                            --                |
+                                            --                '--->
 
 
 
