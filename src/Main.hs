@@ -5,7 +5,7 @@ import Text.Printf
 
 
 main :: IO ()
-main = print $ qsort [4,2,7,8,1,6,3]
+main = print $ take 4 $ qsort [4,2,7,8,1,6,3]
 
 qsort :: [Int] -> [Int]
 qsort []     = []
