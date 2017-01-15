@@ -1,8 +1,28 @@
 module Main where
 import Control.Concurrent.Async
 
-data AsyncList a = Cons a (Async (AsyncList a))
-data MsgQueue  a = Cons' a (IVar (MsgQueue a))
+
+-- undefined       :: AEither a b
+-- Left  undefined :: AEither a b
+-- Right undefined :: AEither a b
+type AEither a b = AVar (Either (AVar a) (AVar b))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 newtype AVar a = AVar { getAVar :: Either a (Async a)
@@ -21,27 +41,6 @@ asyncA = fmap (AVar . Right) . async
 waitA :: AVar a -> IO a
 waitA (AVar (Left x))       = return x
 waitA (AVar (Right asyncX)) = wait asyncX
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-data IVar a
-
 
 
 main :: IO ()
