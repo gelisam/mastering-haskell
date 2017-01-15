@@ -5,14 +5,14 @@ import Control.Concurrent.Async
 
 main :: IO ()
 main = do
-  asyncXS <- async $ produceXS -- -----.
-                       --              |
-  doStuff1             --              |
-  doStuff2             --              |
-  doStuff3             --              |
-                       --              v
-  asyncXS' <- async $ do xs <- wait asyncXS
-                         processXS xs
+  asyncXS <- async $ (:) <$> produceX <*> produceXS'  -- produceXS
+                       --              |     
+  doStuff1             --              |     
+  doStuff2             --              '--.
+  doStuff3             --                 |
+                       --                 v
+  asyncXS' <- async $ do x:xs' <- wait asyncXS
+                         consumeX x >> return xs'     -- processXS
                        --     |
   doStuff4             --     |
   doStuff5             --     |
@@ -38,11 +38,13 @@ main = do
 
 
 
-data XS  = XS
-data XS' = XS'
+data X  = X
 
-produceXS :: IO XS
-produceXS = return XS
+produceX :: IO X
+produceX = return X
+
+produceXS' :: IO [X]
+produceXS' = return [X]
 
 doStuff1 :: IO ()
 doStuff1 = return ()
@@ -53,8 +55,8 @@ doStuff2 = return ()
 doStuff3 :: IO ()
 doStuff3 = return ()
 
-processXS :: XS -> IO XS'
-processXS XS = return XS'
+consumeX :: X -> IO ()
+consumeX X = return ()
 
 doStuff4 :: IO ()
 doStuff4 = return ()
@@ -65,5 +67,5 @@ doStuff5 = return ()
 doStuff6 :: IO ()
 doStuff6 = return ()
 
-consumeXS' :: XS' -> IO ()
-consumeXS' XS' = return ()
+consumeXS' :: [X] -> IO ()
+consumeXS' _ = return ()
