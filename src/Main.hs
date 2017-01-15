@@ -1,24 +1,25 @@
 module Main where
-
+import Control.Concurrent.Async
 
 
 
 main :: IO ()
 main = do
-  xs <- produceXS      --  ----.
-                       --      |
-  doStuff1             --      |
-  doStuff2             --      |
-  doStuff3             --      |
-                       --      |
-  xs' <- processXS xs  --  <---'
-                 --  \ 
-                 --   |
-  doStuff4       --   |
-  doStuff5       --   |
-  doStuff6       --   |
-                 --   |
-  consumeXS' xs' -- <-'
+  asyncXS <- async $ produceXS -- -----.
+                       --              |
+  doStuff1             --              |
+  doStuff2             --              |
+  doStuff3             --              |
+                       --              v
+  asyncXS' <- async $ do xs <- wait asyncXS
+                         processXS xs
+                       --     |
+  doStuff4             --     |
+  doStuff5             --     |
+  doStuff6             --     |
+                       --     |
+  xs' <- wait asyncXS' -- <---'
+  consumeXS' xs'
 
 
 
