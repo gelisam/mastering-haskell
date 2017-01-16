@@ -4,13 +4,13 @@ module Main where
 --                          
 --    ...                   ...
 --    
+--                          signal cond
 --    block cond
 --    BLOCKS
---                          signal cond
---    UNBLOCKS
---    ...                   ...
 --    
---    after                 after
+--                          ...
+--    
+--                          after
 
 
 
