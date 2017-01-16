@@ -5,10 +5,10 @@ module Main where
 --    ...                   ...
 --    
 --    reset cond
---    block cond
---    BLOCKS
 --                          signal cond
---    UNBLOCKS
+--    block cond
+--    
+--    
 --    ...                   ...
 --    
 --    after                 after
