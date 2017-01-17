@@ -1,6 +1,6 @@
 module Main where
 import Control.Concurrent.Async
-
+import Control.Monad
 
 -- undefined           :: [a]
 -- undefined:undefined :: [a]
@@ -8,15 +8,19 @@ data AList' a = Nil
               | Cons (AVar a) (AList a)
 type AList  a = AVar (AList' a)
 
+fromList :: [AVar a] -> AList a
+fromList []      = pureA Nil
+fromList (ax:xs) = pureA $ Cons ax (fromList xs)
 
+waitSpine :: AList a -> IO [AVar a]
+waitSpine = waitA >=> go
+  where
+    go :: AList' a -> IO [AVar a]
+    go Nil           = return []
+    go (Cons ax axs) = (ax:) <$> waitSpine axs
 
-
-
-
-
-
-
-
+waitLength :: AList a -> IO Int
+waitLength = fmap length . waitSpine
 
 
 
