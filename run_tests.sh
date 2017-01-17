@@ -11,3 +11,6 @@ trap "./scripts/kill_recursively.sh $PID" EXIT
 
 # wait for the child process to terminate
 wait
+echo
+echo
+echo -e "\033[2A"
