@@ -1,22 +1,31 @@
 {-# LANGUAGE LambdaCase #-}
 module Main where
+import Control.Concurrent
 import Control.Concurrent.Async
-
 -- undefined           :: [a]
 -- undefined:undefined :: [a]
 data AList' a = Nil
               | Cons (AVar a) (AList a)
 type AList  a = AVar (AList' a)
 
-waitFold :: (b -> a -> IO b) -> b -> AList a -> IO b
-waitFold process y axs = waitA axs >>= \case
-  Nil          -> return y
-  Cons ax axs' -> do x <- waitA ax
-                     y' <- process y x
-                     waitFold process y' axs'
+push :: AVar a -> MVar (AList a) -> IO ()
+push ax var = do axs <- takeMVar var
+                 let axs' = pureA $ Cons ax axs
+                 putMVar var axs'
 
-waitSum :: AList Int -> IO Int
-waitSum = waitFold slowAdd 0
+waitPop :: MVar (AList a) -> IO (Maybe a)
+waitPop var = do axs <- takeMVar var
+                 waitA axs >>= \case
+                   Nil          -> do putMVar var (pureA Nil)
+                                      return Nothing
+                   Cons ax axs' -> do x <- waitA ax
+                                      putMVar var axs'
+                                      return (Just x)
+
+
+
+
+
 
 
 
