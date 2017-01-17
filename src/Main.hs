@@ -12,15 +12,14 @@ producer :: BoundedBuffer Int -> IO ()
 producer (BoundedBuffer {..}) = go 0
   where
     go x = do sleep 0.3
-              full <- modifyMVar buffer $ \xs -> do
+              modifyMVar_ buffer $ \xs -> do
                 let xs' = xs ++ [x]
                 let full = length xs' == 4
                 putStrLn $ "PRODUCER " ++ show xs'
-                return (xs', full)
+                when full $ do
+                  block okToProduce
+                return xs'
               signal okToConsume
-              when full $ do                   -- consumer empties
-                sleep 2                        -- the buffer here
-                block okToProduce
               go (x+1)
 
 
