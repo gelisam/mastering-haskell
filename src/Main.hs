@@ -2,13 +2,11 @@ module Main where
 import Control.Concurrent.Async
 
 
--- undefined       :: AEither a b
--- Left  undefined :: AEither a b
--- Right undefined :: AEither a b
-type AEither a b = AVar (Either (AVar a) (AVar b))
-
-
-
+-- undefined           :: [a]
+-- undefined:undefined :: [a]
+data AList' a = Nil
+              | Cons (AVar a) (AList a)
+type AList  a = AVar (AList' a)
 
 
 
