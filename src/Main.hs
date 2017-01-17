@@ -1,6 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
 module Main where
 import Control.Concurrent.Async
-import Control.Monad
 
 -- undefined           :: [a]
 -- undefined:undefined :: [a]
@@ -8,19 +8,15 @@ data AList' a = Nil
               | Cons (AVar a) (AList a)
 type AList  a = AVar (AList' a)
 
-fromList :: [AVar a] -> AList a
-fromList []      = pureA Nil
-fromList (ax:xs) = pureA $ Cons ax (fromList xs)
+waitFold :: (b -> a -> IO b) -> b -> AList a -> IO b
+waitFold process y axs = waitA axs >>= \case
+  Nil          -> return y
+  Cons ax axs' -> do x <- waitA ax
+                     y' <- process y x
+                     waitFold process y' axs'
 
-waitSpine :: AList a -> IO [AVar a]
-waitSpine = waitA >=> go
-  where
-    go :: AList' a -> IO [AVar a]
-    go Nil           = return []
-    go (Cons ax axs) = (ax:) <$> waitSpine axs
-
-waitLength :: AList a -> IO Int
-waitLength = fmap length . waitSpine
+waitSum :: AList Int -> IO Int
+waitSum = waitFold slowAdd 0
 
 
 
@@ -43,6 +39,13 @@ asyncA = fmap (AVar . Right) . async
 waitA :: AVar a -> IO a
 waitA (AVar (Left x))       = return x
 waitA (AVar (Right asyncX)) = wait asyncX
+
+
+
+-- pretend this is slow
+slowAdd :: Int -> Int -> IO Int
+slowAdd x1 x2 = return (x1 + x2)
+
 
 
 main :: IO ()
