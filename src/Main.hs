@@ -5,20 +5,20 @@ import Control.Concurrent.Async
 
 main :: IO ()
 main = do
-  asyncXS <- async $ (:) <$> produceX <*> produceXS'  -- produceXS
-                       --              |     
-  doStuff1             --              |     
-  doStuff2             --              '--.
-  doStuff3             --                 |
-                       --                 v
-  asyncXS' <- async $ do x:xs' <- wait asyncXS
-                         consumeX x >> return xs'     -- processXS
-                       --     |
-  doStuff4             --     |
-  doStuff5             --     |
-  doStuff6             --     |
-                       --     |
-  xs' <- wait asyncXS' -- <---'
+  asyncXS <- async $ (:) <$> produceX <*> produceXS'
+                       --        |                  \
+  doStuff1             --        |                   |
+  doStuff2             --        |                   |
+  doStuff3             --        |                   |
+                       --        v                   |
+  asyncXS' <- async $ do x:xs' <- wait asyncXS    -- |
+                         consumeX x >> return xs' -- |
+                       --                            |
+  doStuff4             --                            |
+  doStuff5             --                            |
+  doStuff6             --                            |
+                       --                            | 
+  xs' <- wait asyncXS' -- <--------------------------'
   consumeXS' xs'
 
 
