@@ -3,12 +3,15 @@ module Main where
 -- do before             do before
 --                          
 --    ...                   ...
---    
---    reset  okToProduce    reset  okToConsume
---    signal okToConsume    signal okToProduce
---    
+--                          reset  okToConsume
+--                          signal okToProduce
+--    reset  okToProduce    
+--    signal okToConsume    
 --    block  okToProduce    block  okToConsume
---    BLOCKS                BLOCKS
+--    BLOCKS                
+--                          ...
+--    
+--                          after
 
 
 
