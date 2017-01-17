@@ -18,7 +18,8 @@ producer (BoundedBuffer {..}) = go 0
                 putStrLn $ "PRODUCER " ++ show xs'
                 return (xs', full)
               signal okToConsume
-              when full $ do
+              when full $ do                   -- consumer empties
+                sleep 2                        -- the buffer here
                 block okToProduce
               go (x+1)
 
