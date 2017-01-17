@@ -1,84 +1,50 @@
-{-# LANGUAGE LambdaCase, RecordWildCards, TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 module Main where
 import Control.Concurrent
+import Control.Exception
 import Control.Monad
 import Data.IORef
+import Data.Typeable
 
-data MyMVar a = MyMVar { payload  :: IORef (Maybe a)
-                       , okToPut  :: Signal
-                       , okToTake :: Signal
-                       }
+data SignalState = Blocked [ThreadId] | Signaled
+type MySignal = IORef SignalState
 
-tryTakeMyMVar :: MyMVar a -> IO (Maybe a)
-tryTakeMyMVar (MyMVar {..}) = do
-  r <- atomicModifyIORef payload (Nothing,)
-  when (isJust r) $ signal okToPut
-  return r
+data WakeUp = WakeUp deriving (Show, Typeable)
+instance Exception WakeUp
 
-takeMyMVar :: MyMVar a -> IO a
-takeMyMVar var@(MyMVar {..}) = do
-  reset okToTake
-  tryTakeMyMVar var >>= \case
-    Just x  -> do return x
-    Nothing -> do block okToTake
-                  takeMyMVar var
+block :: MySignal -> IO ()
+block ref = do t <- myThreadId
+               handle (\WakeUp -> return ()) $ do
+                 blocked <- atomicModifyIORef ref $ \case
+                   Blocked ts -> (Blocked (t:ts), True)
+                   Signaled   -> (Signaled, False)
+                 when blocked $ forever $ sleep 600
 
 
 
 
 
-newEmptyMyMVar :: IO (MyMVar a)
-newEmptyMyMVar = MyMVar <$> newIORef Nothing
-                        <*> newSignal
-                        <*> newSignal
+newSignal :: IO MySignal
+newSignal = newIORef (Blocked [])
 
-tryPutMyMVar :: MyMVar a -> a -> IO Bool
-tryPutMyMVar (MyMVar {..}) x = do
-  r <- atomicModifyIORef payload $ \case
-    Nothing -> (Just x, True)
-    Just x' -> (Just x', False)
-  when r $ signal okToTake
-  return r
+reset :: MySignal -> IO ()
+reset ref = atomicModifyIORef ref $ \case
+  Blocked ts -> (Blocked ts, ())
+  Signaled   -> (Blocked [], ())
 
-putMyMVar :: MyMVar a -> a -> IO ()
-putMyMVar var@(MyMVar {..}) x = do
-  reset okToPut
-  tryPutMyMVar var x >>= \case
-    True  -> return ()
-    False -> do block okToPut
-                putMyMVar var x
+signal :: MySignal -> IO ()
+signal ref = do ts <- atomicModifyIORef ref $ \case
+                  Blocked ts -> (Signaled, ts)
+                  Signaled   -> (Signaled, [])
+                forM_ ts $ \t -> throwTo t WakeUp
 
 
 
-type Signal = MVar ()
-
-newSignal :: IO Signal
-newSignal = newEmptyMVar
-
-reset :: Signal -> IO ()
-reset = void . tryTakeMVar
-
-block :: Signal -> IO ()
-block = takeMVar
-
-signal :: Signal -> IO ()
-signal = void . flip tryPutMVar ()
-
-takeWhen :: MVar a -> (a -> Bool) -> Signal -> IO a
-takeWhen var p cond = do x <- takeMVar var
-                         let satisfied = p x
-                         if satisfied
-                         then return x
-                         else do reset cond
-                                 putMVar var x
-                                 block cond
-                                 takeWhen var p cond
+-- like threadDelay, but using seconds instead of microseconds
+sleep :: Double -> IO ()
+sleep seconds = threadDelay $ round $ seconds * 1000 * 1000
 
 
-
-isJust :: Maybe a -> Bool
-isJust (Just _) = True
-isJust Nothing  = False
 
 main :: IO ()
 main = return ()
