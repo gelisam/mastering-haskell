@@ -9,17 +9,17 @@ traceAppendMVar var s = do
 
 
 
+
 main :: IO ()
 main = do
-  lock <- newLock
-  var1 <- newMVar []
-  var2 <- newMVar []
-  tA <- async $ withLock lock $ do traceAppendMVar var1 "A"
-                                   traceSleep "A" 0.5
-                                   traceAppendMVar var1 "AA"
-  tB <- async $ withLock lock $ do traceAppendMVar var2 "B"
-                                   traceSleep "B" 0.5
-                                   traceAppendMVar var2 "BB"
+  lock1 <- newLock; var1 <- newMVar []
+  lock2 <- newLock; var2 <- newMVar []
+  tA <- async $ withLock lock1 $ do traceAppendMVar var1 "A"
+                                    traceSleep "A" 0.5
+                                    traceAppendMVar var1 "AA"
+  tB <- async $ withLock lock2 $ do traceAppendMVar var2 "B"
+                                    traceSleep "B" 0.5
+                                    traceAppendMVar var2 "BB"
   mapM_ wait [tA,tB]
 
 
