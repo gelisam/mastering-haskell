@@ -2,27 +2,34 @@ module Main where
 import Control.Concurrent
 import Control.Concurrent.Async
 
-traceAppendMVar :: MVar [String] -> String -> IO ()
-traceAppendMVar var s = do
-  putStrLn s
-  appendMVar var s
-
+traceReadMVar :: MVar (String, Lock, MVar a) -> IO (Lock, MVar a)
+traceReadMVar var = do
+  (s, l, v) <- readMVar var
+  putStrLn $ "got var" ++ s
+  return (l, v)
 
 
 
 main :: IO ()
 main = do
   lock1 <- newLock; var1 <- newMVar []
-  lock2 <- newLock; var2 <- newMVar []
-  tA <- async $ withLock lock1 $ do traceAppendMVar var1 "A"
+  lockX <- newLock; varX <- newMVar ("1", lock1, var1)
+  tA <- async $ withLock lockX $ do (l, v) <- traceReadMVar varX
                                     traceSleep "A" 0.5
-                                    traceAppendMVar var1 "AA"
-  tB <- async $ withLock lock2 $ do traceAppendMVar var2 "B"
+                                    withLock l $ do
+                                      traceAppendMVar v "AA"
+  tB <- async $ withLock lockX $ do (l, v) <- traceReadMVar varX
                                     traceSleep "B" 0.5
-                                    traceAppendMVar var2 "BB"
+                                    withLock l $ do
+                                      traceAppendMVar v "BB"
   mapM_ wait [tA,tB]
 
 
+
+traceAppendMVar :: MVar [String] -> String -> IO ()
+traceAppendMVar var s = do
+  putStrLn s
+  appendMVar var s
 
 traceSleep :: String -> Double -> IO ()
 traceSleep t seconds = do
