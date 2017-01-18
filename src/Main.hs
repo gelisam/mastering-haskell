@@ -11,17 +11,17 @@ import Debug.Trace
 
 
 
-
 main :: IO ()
 main = do
-  var <- atomically $ newTVar []
+  var1 <- atomically $ newTVar []
+  var2 <- atomically $ newTVar []
   tA <- async $ atomically $ do traceSleep "A" 0.1
-                                traceAppendTVar var "A"
+                                traceAppendTVar var1 "A"
                                 traceSleep "A" 1
-                                traceAppendTVar var "AA"
+                                traceAppendTVar var1 "AA"
   tB <- async $ atomically $ do traceSleep "B" 0.5
-                                traceAppendTVar var "B"
-                                traceAppendTVar var "BB"
+                                traceAppendTVar var2 "B"
+                                traceAppendTVar var2 "BB"
   mapM_ wait [tA,tB]
 
 
