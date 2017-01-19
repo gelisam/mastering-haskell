@@ -5,23 +5,23 @@ import Control.Concurrent.STM
 import System.IO.Unsafe
 import Debug.Trace
 
-traceReadTVar :: TVar (String, TVar a) -> STM (TVar a)
-traceReadTVar var = do
-  (s, v) <- readTVar var
-  trace ("got var" ++ s)
-      $ return v
+
+
+
+
+
 
 
 main :: IO ()
 main = do
   var1 <- atomically $ newTVar []
-  varX <- atomically $ newTVar ("1", var1)
-  tA <- async $ atomically $ do v <- traceReadTVar varX
+  var2 <- atomically $ newTVar []
+  tA <- async $ atomically $ do traceAppendTVar var1 "A"
                                 traceSleep "A" 0.5
-                                traceAppendTVar v "AA"
-  tB <- async $ atomically $ do v <- traceReadTVar varX
+                                traceAppendTVar var2 "AA"
+  tB <- async $ atomically $ do traceAppendTVar var2 "B"
                                 traceSleep "B" 0.5
-                                traceAppendTVar v "BB"
+                                traceAppendTVar var1 "BB"
   mapM_ wait [tA,tB]
 
 
