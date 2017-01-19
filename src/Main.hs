@@ -6,27 +6,33 @@ import Control.Monad
 import System.IO.Unsafe
 import Debug.Trace
 
+
+main :: IO ()
+main = do
+  var1 <- atomically $ newTVar 0
+  var2 <- atomically $ newTVar 0
+  var3 <- atomically $ newTVar 0
+  t <- async $ atomically $ do x <- traceReadTVar "A" var2
+                               check (x >= 3)
+                               trace "A DONE"
+                                   $ return ()
+  replicateM_ 6 $ do sleep 0.3
+                     atomically $ traceIncrTVar "var1" var1
+                     sleep 0.3
+                     atomically $ traceIncrTVar "var2" var2
+                     sleep 0.3
+                     atomically $ traceIncrTVar "var3" var3
+  wait t
+
+
+
+
 traceIncrTVar :: String -> TVar Int -> STM ()
 traceIncrTVar v var = do
   modifyTVar var (+1)
   x <- readTVar var
   trace ("increment " ++ v ++ " to " ++ show x)
       $ return ()
-
-main :: IO ()
-main = do
-  var <- atomically $ newTVar 0
-  t <- async $ atomically $ do x <- traceReadTVar "A" var
-                               check (x >= 3)
-                               trace "A DONE"
-                                   $ return ()
-  replicateM_ 6 $ do sleep 0.5
-                     atomically $ traceIncrTVar "var" var
-  wait t
-
-
-
-
 
 traceReadTVar :: Show a => String -> TVar a -> STM a
 traceReadTVar t var = do
