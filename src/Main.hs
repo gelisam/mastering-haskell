@@ -9,9 +9,9 @@ producer buffer = go 0
   where
     go x = do sleep 0.3
               xs' <- atomically $ do xs <- readTVar buffer
-                                     check (length xs < 4)
                                      let xs' = xs ++ [x]
                                      writeTVar buffer xs'
+                                     check (length xs' <= 4)
                                      return xs'
               putStrLn $ "PRODUCER " ++ show xs'
               go (x+1)
