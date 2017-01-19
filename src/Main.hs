@@ -2,38 +2,37 @@ module Main where
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.STM
+import Control.Monad
 import System.IO.Unsafe
 import Debug.Trace
 
-
-
-
-
-
-
+traceIncrTVar :: String -> TVar Int -> STM ()
+traceIncrTVar v var = do
+  modifyTVar var (+1)
+  x <- readTVar var
+  trace ("increment " ++ v ++ " to " ++ show x)
+      $ return ()
 
 main :: IO ()
 main = do
-  var1 <- atomically $ newTVar []
-  var2 <- atomically $ newTVar []
-  tA <- async $ atomically $ do traceAppendTVar var1 "A"
-                                traceSleep "A" 0.5
-                                traceAppendTVar var2 "AA"
-  tB <- async $ atomically $ do traceAppendTVar var2 "B"
-                                traceSleep "B" 0.5
-                                traceAppendTVar var1 "BB"
-  mapM_ wait [tA,tB]
+  var <- atomically $ newTVar 0
+  t <- async $ atomically $ do x <- traceReadTVar "A" var
+                               check (x >= 3)
+                               trace "A DONE"
+                                   $ return ()
+  replicateM_ 6 $ do sleep 0.5
+                     atomically $ traceIncrTVar "var" var
+  wait t
 
 
 
 
 
-traceAppendTVar :: TVar [String] -> String -> STM ()
-traceAppendTVar var s = trace s $ appendTVar var s
-
-appendTVar :: TVar [a] -> a -> STM ()
-appendTVar var x = modifyTVar var (++ [x])
-
+traceReadTVar :: Show a => String -> TVar a -> STM a
+traceReadTVar t var = do
+  x <- readTVar var
+  trace (t ++ " reads " ++ show x)
+      $ return x
 
 traceSleep :: String -> Double -> STM ()
 traceSleep t seconds = unsafePerformIO $ do
