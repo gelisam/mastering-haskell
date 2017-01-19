@@ -1,50 +1,59 @@
 module Main where
 import Control.Concurrent
-import Control.Concurrent.Async
 import Control.Concurrent.STM
-import Control.Monad
-import System.IO.Unsafe
-import Debug.Trace
+
+type BoundedBuffer a = TVar [a]
+
+producer :: BoundedBuffer Int -> IO ()
+producer buffer = go 0
+  where
+    go x = do sleep 0.3
+              xs' <- atomically $ do xs <- readTVar buffer
+                                     check (length xs < 4)
+                                     let xs' = xs ++ [x]
+                                     writeTVar buffer xs'
+                                     return xs'
+              putStrLn $ "PRODUCER " ++ show xs'
+              go (x+1)
+
+
+
+
+
+
+
+
+
+consumer :: BoundedBuffer Int -> IO ()
+consumer buffer = go
+  where
+    go = do sleep 0.4
+            xs' <- atomically $ do xs <- readTVar buffer
+                                   check (length xs > 0)
+                                   let xs' = tail xs
+                                   writeTVar buffer xs'
+                                   return xs'
+            putStrLn $ "CONSUMER " ++ show xs'
+            go
+
+
+
+newBoundedBuffer :: IO (BoundedBuffer a)
+newBoundedBuffer = atomically $ newTVar []
+
 
 
 main :: IO ()
 main = do
-  var1 <- atomically $ newTVar 0
-  var2 <- atomically $ newTVar 0
-  var3 <- atomically $ newTVar 0
-  t <- async $ atomically $ do x <- traceReadTVar "A" var2
-                               check (x >= 3)
-                               trace "A DONE"
-                                   $ return ()
-  replicateM_ 6 $ do sleep 0.3
-                     atomically $ traceIncrTVar "var1" var1
-                     sleep 0.3
-                     atomically $ traceIncrTVar "var2" var2
-                     sleep 0.3
-                     atomically $ traceIncrTVar "var3" var3
-  wait t
+  bounderBuffer <- newBoundedBuffer
+  _ <- forkIO $ producer bounderBuffer
+  _ <- forkIO $ consumer bounderBuffer
+  
+  let loop = do sleep 1
+                loop
+  loop
 
 
-
-
-traceIncrTVar :: String -> TVar Int -> STM ()
-traceIncrTVar v var = do
-  modifyTVar var (+1)
-  x <- readTVar var
-  trace ("increment " ++ v ++ " to " ++ show x)
-      $ return ()
-
-traceReadTVar :: Show a => String -> TVar a -> STM a
-traceReadTVar t var = do
-  x <- readTVar var
-  trace (t ++ " reads " ++ show x)
-      $ return x
-
-traceSleep :: String -> Double -> STM ()
-traceSleep t seconds = unsafePerformIO $ do
-  putStrLn $ t ++ " is sleeping for " ++ show seconds ++ " seconds"
-  sleep seconds
-  return $ return ()
 
 -- like threadDelay, but using seconds instead of microseconds
 sleep :: Double -> IO ()
