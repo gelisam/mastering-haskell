@@ -4,11 +4,19 @@ import Control.Concurrent
 
 data STM a = STM { runSTM :: IO (Log, Maybe a) }
 
+check :: Bool -> STM ()
+check b = STM $ return (Nil, guard b)
 
+newTVar :: a -> STM (TVar a)
+newTVar x = STM $ do s <- newSignal
+                     var <- newMVar $ VState x s
+                     return (Nil, Just var)
 
+readTVar :: TVar a -> STM a
+readTVar var = STM $ fmap Just <$> loggedRead var
 
-
-
+writeTVar :: TVar a -> a -> STM ()
+writeTVar var x = STM $ fmap Just <$> loggedWrite var x
 
 
 
@@ -132,6 +140,12 @@ block var = do takeMVar var
 signal :: Signal -> IO ()
 signal var = do _ <- tryPutMVar var ()
                 return ()
+
+
+
+guard :: Monad m => Bool -> m ()
+guard True  = return ()
+guard False = fail "failed guard"
 
 
 
