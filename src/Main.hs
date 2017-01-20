@@ -5,9 +5,9 @@ import Control.Concurrent
 data STM a = STM { runSTM :: IO (Log, Either Abort a) }
 
 data Abort = Check
-
-
-
+           | Conflict Transaction
+data Transaction = Transaction
+  { isDone :: Signal }
 
 atomically :: STM a -> IO a
 atomically sx = runSTM sx >>= \case
@@ -15,9 +15,9 @@ atomically sx = runSTM sx >>= \case
                       return x
   (lg, Left e)  -> do revert lg
                       case e of
-                        Check -> waitForChange lg
+                        Check      -> waitForChange lg
+                        Conflict t -> block (isDone t)
                       atomically sx
-
 
 
 
