@@ -2,17 +2,44 @@
 module Main where
 import Control.Concurrent
 
-data STM a = STM { runSTM :: IO (Log, Either Abort a) }
+data STM a = STM { runSTM :: Transaction
+                          -> IO (Log, Either Abort a)
+                 }
+
+data Transaction = Transaction
+  { isDone          :: Signal
+  , conflictingWith :: MVar (Maybe Transaction)
+  }
+
+terminate :: Transaction -> STM ()
+terminate t = STM $ \thisT -> do
+  modifyMVar_ (conflictingWith t) $ \_ -> return $ Just thisT
+  return (Nil, Right ())
+
+abortIfNeeded :: STM ()
+abortIfNeeded = STM $ \thisT -> do
+  readMVar (conflictingWith thisT) >>= \case
+    Nothing -> return (Nil, Right ())
+    Just t  -> return (Nil, Left (Conflict t))
+
+
+
+
+
+
+
+
+
+
+
 
 data Abort = Check
            | Conflict Transaction
-data Transaction = Transaction
-  { isDone :: Signal }
 
 atomically :: STM a -> IO a
 atomically sx = do
-  thisT <- Transaction <$> newSignal
-  runSTM sx >>= \case
+  thisT <- Transaction <$> newSignal <*> newMVar Nothing
+  runSTM sx thisT >>= \case
     (lg, Right x) -> do commit lg
                         signal (isDone thisT)
                         return x
@@ -25,45 +52,40 @@ atomically sx = do
 
 
 
-
-
-
-
-
 check :: Bool -> STM ()
-check b = STM $ do
+check b = STM $ \_ -> do
   return (Nil, if b then Right () else Left Check)
 
 newTVar :: a -> STM (TVar a)
-newTVar x = STM $ do s <- newSignal
-                     var <- newMVar $ VState x s
-                     return (Nil, Right var)
+newTVar x = STM $ \_ -> do s <- newSignal
+                           var <- newMVar $ VState x s
+                           return (Nil, Right var)
 
 readTVar :: TVar a -> STM a
-readTVar var = STM $ fmap Right <$> loggedRead var
+readTVar var = STM $ \_ -> fmap Right <$> loggedRead var
 
 writeTVar :: TVar a -> a -> STM ()
-writeTVar var x = STM $ fmap Right <$> loggedWrite var x
+writeTVar var x = STM $ \_ -> fmap Right <$> loggedWrite var x
 
 
 
 instance Functor STM where
-  fmap f = STM . (fmap . fmap . fmap) f . runSTM
+  fmap f = STM . (fmap . fmap . fmap . fmap) f . runSTM
 
 instance Applicative STM where
-  pure = STM . pure . pure . pure
+  pure = STM . pure . pure . pure . pure
   sf <*> sx = do
     f <- sf
     x <- sx
     return (f x)
 
 instance Monad STM where
-  sx >>= f = STM $ do
-    (lgX, eitherX) <- runSTM sx
+  sx >>= f = STM $ \thisT -> do
+    (lgX, eitherX) <- runSTM sx thisT
     case eitherX of
       Left e  -> return (lgX, Left e)
       Right x -> do
-        (lgY, eitherY) <- runSTM (f x)
+        (lgY, eitherY) <- runSTM (f x) thisT
         return (mappend lgX lgY, eitherY)
 
 
