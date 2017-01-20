@@ -2,10 +2,49 @@
 module Main where
 import Control.Concurrent
 
-data STM a
+data STM a = STM { runSTM :: IO (Log, Maybe a) }
 
-runSTM :: STM a -> IO (Log, Maybe a)
-runSTM = undefined
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+instance Functor STM where
+  fmap f = STM . (fmap . fmap . fmap) f . runSTM
+
+instance Applicative STM where
+  pure = STM . pure . pure . pure
+  sf <*> sx = do
+    f <- sf
+    x <- sx
+    return (f x)
+
+instance Monad STM where
+  sx >>= f = STM $ do
+    (lgX, maybeX) <- runSTM sx
+    case maybeX of
+      Nothing -> return (lgX, Nothing)
+      Just x  -> do
+        (lgY, maybeY) <- runSTM (f x)
+        return (mappend lgX lgY, maybeY)
+
+
 
 atomically :: STM a -> IO a
 atomically sx = runSTM sx >>= \case
@@ -14,14 +53,6 @@ atomically sx = runSTM sx >>= \case
   (lg, Nothing) -> do revert lg
                       waitForChange lg
                       atomically sx
-
-
-
-
-
-
-
-
 
 
 
