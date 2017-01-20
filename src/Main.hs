@@ -1,6 +1,29 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, LambdaCase #-}
 module Main where
 import Control.Concurrent
+
+data STM a
+
+runSTM :: STM a -> IO (Log, Maybe a)
+runSTM = undefined
+
+atomically :: STM a -> IO a
+atomically sx = runSTM sx >>= \case
+  (lg, Just x)  -> do commit lg
+                      return x
+  (lg, Nothing) -> do revert lg
+                      waitForChange lg
+                      atomically sx
+
+
+
+
+
+
+
+
+
+
 
 data VState a = VState { value     :: a
                        , isChanged :: Signal
@@ -16,13 +39,6 @@ commit (SnocWrite ops vstate v) = do
     return $ vstate' { isChanged = s }
   signal (isChanged vstate)
   commit ops
-
-
-
-
-
-
-
 
 waitForChange :: Log -> IO ()
 waitForChange lg = do someVarChanged <- newSignal
