@@ -7,6 +7,23 @@ data VState a = VState { value     :: a
                        }
 type TVar a = MVar (VState a)
 
+commit :: Log -> IO ()
+commit Nil                      = return ()
+commit (SnocRead  ops _      _) = commit ops
+commit (SnocWrite ops vstate v) = do
+  s <- newSignal
+  modifyMVar_ v $ \vstate' ->
+    return $ vstate' { isChanged = s }
+  signal (isChanged vstate)
+  commit ops
+
+
+
+
+
+
+
+
 waitForChange :: Log -> IO ()
 waitForChange lg = do someVarChanged <- newSignal
                       go someVarChanged lg
@@ -18,9 +35,6 @@ waitForChange lg = do someVarChanged <- newSignal
                                           signal s
                                         go s ops
     go s (SnocWrite ops _      _)  = go s ops
-
-
-
 
 
 
