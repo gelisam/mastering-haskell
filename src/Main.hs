@@ -2,34 +2,44 @@
 module Main where
 import Control.Concurrent
 
-data STM a = STM { runSTM :: IO (Log, Maybe a) }
+data STM a = STM { runSTM :: IO (Log, Either Abort a) }
+
+data Abort = Check
+
+
+
+
+atomically :: STM a -> IO a
+atomically sx = runSTM sx >>= \case
+  (lg, Right x) -> do commit lg
+                      return x
+  (lg, Left e)  -> do revert lg
+                      case e of
+                        Check -> waitForChange lg
+                      atomically sx
+
+
+
+
+
+
+
+
 
 check :: Bool -> STM ()
-check b = STM $ return (Nil, guard b)
+check b = STM $ do
+  return (Nil, if b then Right () else Left Check)
 
 newTVar :: a -> STM (TVar a)
 newTVar x = STM $ do s <- newSignal
                      var <- newMVar $ VState x s
-                     return (Nil, Just var)
+                     return (Nil, Right var)
 
 readTVar :: TVar a -> STM a
-readTVar var = STM $ fmap Just <$> loggedRead var
+readTVar var = STM $ fmap Right <$> loggedRead var
 
 writeTVar :: TVar a -> a -> STM ()
-writeTVar var x = STM $ fmap Just <$> loggedWrite var x
-
-
-
-
-
-
-
-
-
-
-
-
-
+writeTVar var x = STM $ fmap Right <$> loggedWrite var x
 
 
 
@@ -45,22 +55,12 @@ instance Applicative STM where
 
 instance Monad STM where
   sx >>= f = STM $ do
-    (lgX, maybeX) <- runSTM sx
-    case maybeX of
-      Nothing -> return (lgX, Nothing)
-      Just x  -> do
-        (lgY, maybeY) <- runSTM (f x)
-        return (mappend lgX lgY, maybeY)
-
-
-
-atomically :: STM a -> IO a
-atomically sx = runSTM sx >>= \case
-  (lg, Just x)  -> do commit lg
-                      return x
-  (lg, Nothing) -> do revert lg
-                      waitForChange lg
-                      atomically sx
+    (lgX, eitherX) <- runSTM sx
+    case eitherX of
+      Left e  -> return (lgX, Left e)
+      Right x -> do
+        (lgY, eitherY) <- runSTM (f x)
+        return (mappend lgX lgY, eitherY)
 
 
 
@@ -140,12 +140,6 @@ block var = do takeMVar var
 signal :: Signal -> IO ()
 signal var = do _ <- tryPutMVar var ()
                 return ()
-
-
-
-guard :: Monad m => Bool -> m ()
-guard True  = return ()
-guard False = fail "failed guard"
 
 
 
