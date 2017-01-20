@@ -10,14 +10,18 @@ data Transaction = Transaction
   { isDone :: Signal }
 
 atomically :: STM a -> IO a
-atomically sx = runSTM sx >>= \case
-  (lg, Right x) -> do commit lg
-                      return x
-  (lg, Left e)  -> do revert lg
-                      case e of
-                        Check      -> waitForChange lg
-                        Conflict t -> block (isDone t)
-                      atomically sx
+atomically sx = do
+  thisT <- Transaction <$> newSignal
+  runSTM sx >>= \case
+    (lg, Right x) -> do commit lg
+                        signal (isDone thisT)
+                        return x
+    (lg, Left e)  -> do revert lg
+                        signal (isDone thisT)
+                        case e of
+                          Check      -> waitForChange lg
+                          Conflict t -> block (isDone t)
+                        atomically sx
 
 
 
