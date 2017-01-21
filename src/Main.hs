@@ -1,60 +1,37 @@
+{-# LANGUAGE GADTs #-}
 module Main where
 import Control.Concurrent
-import Control.Concurrent.STM
 
-type BoundedBuffer a = TVar [a]
+type TVar a = MVar a
+data Log where
+  Nil       :: Log
+  SnocRead  :: Log -> a -> TVar a -> Log
+  SnocWrite :: Log -> a -> TVar a -> Log
 
-producer :: BoundedBuffer Int -> IO ()
-producer buffer = go 0
-  where
-    go x = do sleep 0.3
-              xs' <- atomically $ do xs <- readTVar buffer
-                                     let xs' = xs ++ [x]
-                                     writeTVar buffer xs'
-                                     check (length xs' <= 4)
-                                     return xs'
-              putStrLn $ "PRODUCER " ++ show xs'
-              go (x+1)
+loggedRead :: TVar a -> IO (Log, a)
+loggedRead var = do x <- readMVar var
+                    return (SnocRead Nil x var, x)
 
+loggedWrite :: TVar a -> a -> IO (Log, ())
+loggedWrite var x' = do x <- takeMVar var
+                        putMVar var x'
+                        return (SnocWrite Nil x var, ())
 
+revert :: Log -> IO ()
+revert Nil                 = return ()
+revert (SnocRead  ops _ _) = revert ops
+revert (SnocWrite ops x v) = do modifyMVar_ v $ \_ -> return x
+                                revert ops
 
-
-
-
-
-
-
-consumer :: BoundedBuffer Int -> IO ()
-consumer buffer = go
-  where
-    go = do sleep 0.4
-            xs' <- atomically $ do xs <- readTVar buffer
-                                   check (length xs > 0)
-                                   let xs' = tail xs
-                                   writeTVar buffer xs'
-                                   return xs'
-            putStrLn $ "CONSUMER " ++ show xs'
-            go
-
-
-
-newBoundedBuffer :: IO (BoundedBuffer a)
-newBoundedBuffer = atomically $ newTVar []
+instance Monoid Log where
+  mempty = Nil
+  mappend ops = go
+    where
+      go Nil                  = ops
+      go (SnocRead  ops' x v) = SnocRead  (go ops') x v
+      go (SnocWrite ops' x v) = SnocWrite (go ops') x v
 
 
 
 main :: IO ()
-main = do
-  bounderBuffer <- newBoundedBuffer
-  _ <- forkIO $ producer bounderBuffer
-  _ <- forkIO $ consumer bounderBuffer
-  
-  let loop = do sleep 1
-                loop
-  loop
-
-
-
--- like threadDelay, but using seconds instead of microseconds
-sleep :: Double -> IO ()
-sleep seconds = threadDelay $ round $ seconds * 1000 * 1000
+main = return ()
