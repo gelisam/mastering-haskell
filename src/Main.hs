@@ -1,9 +1,9 @@
 module Main where
+import Control.Concurrent
 import Control.Concurrent.Async
-import Control.Monad.Trans.State
 
-appendState :: a -> State [a] ()
-appendState x = modify (++ [x])
+appendMVar :: MVar [a] -> a -> IO ()
+appendMVar var x = modifyMVar_ var (return . (++ [x]))
 
 
 
@@ -14,13 +14,13 @@ appendState x = modify (++ [x])
 
 main :: IO ()
 main = printUniqueResults [] $ do
-  let xs = []
-  xsA <- async $ return $ flip execState xs $ do appendState "A"
-                                                 appendState "AA"
-  xsB <- async $ return $ flip execState xs $ do appendState "B"
-                                                 appendState "BB"
-  (++) <$> wait xsA <*> wait xsB
-
+  var <- newMVar []
+  tA <- async $ do appendMVar var "A"
+                   appendMVar var "AA"
+  tB <- async $ do appendMVar var "B"
+                   appendMVar var "BB"
+  mapM_ wait [tA,tB]
+  readMVar var
 
 
 
