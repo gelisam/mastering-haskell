@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+stack install doctest
 stack install fswatcher
 
 clear
