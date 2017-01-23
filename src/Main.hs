@@ -15,10 +15,10 @@ main = printUniqueResults [] $ do
   tvar <- atomically $ newTVar []
   mvar <- newMVar (0 :: Int)
   tA <- async $ atomically $ do appendTVar tvar "A"
-                                liftIO $ incrementMVar mvar
+                                --liftIO $ incrementMVar mvar
                                 appendTVar tvar "AA"
   tB <- async $ atomically $ do appendTVar tvar "B"
-                                liftIO $ incrementMVar mvar
+                                --liftIO $ incrementMVar mvar
                                 appendTVar tvar "BB"
   mapM_ wait [tA,tB]
   (,) <$> (atomically $ readTVar tvar) <*> readMVar mvar
@@ -45,13 +45,6 @@ appendMVar var x = modifyMVar_ var (return . (++ [x]))
 
 appendTVar :: TVar [a] -> a -> STM ()
 appendTVar var x = modifyTVar var (++ [x])
-
-
-
-liftIO :: IO a -> STM a
-liftIO body = STM $ \_ -> do
-  x <- body
-  return (Nil, Right x)
 
 
 
