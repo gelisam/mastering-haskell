@@ -1,6 +1,6 @@
 module Main where
+import Control.Concurrent.Async
 import Data.IORef
-
 
 
 
@@ -13,15 +13,20 @@ compareAndSwap ref expected replacement = do
 
 
 
+
+
+
 main :: IO ()
-main = do
-  ref <- newIORef (42 :: Int)
-  
-  print =<< compareAndSwap ref 5 10
-  print =<< readIORef ref
-  
-  print =<< compareAndSwap ref 42 50
-  print =<< readIORef ref
+main = printUniqueResults [] $ do
+  ref <- newIORef (0 :: Int)
+  tA <- async $ compareAndSwap ref 0 1
+  tB <- async $ compareAndSwap ref 0 1
+  mapM wait [tA,tB]
 
 
 
+printUniqueResults :: (Show a, Eq a) => [a] -> IO a -> IO ()
+printUniqueResults seen body = do
+  x <- body
+  if x `elem` seen then printUniqueResults seen body
+                   else print x >> printUniqueResults (x:seen) body
