@@ -1,6 +1,33 @@
 {-# LANGUAGE GADTs, LambdaCase #-}
 module Main where
 import Control.Concurrent
+import Control.Concurrent.Async
+
+
+
+
+
+
+
+
+main :: IO ()
+main = printUniqueResults [] $ do
+  tvar <- atomically $ newTVar []
+  mvar <- newMVar (0 :: Int)
+  tA <- async $ atomically $ do appendTVar tvar "A"
+                                stmIO $ incrementMVar mvar
+                                appendTVar tvar "AA"
+  tB <- async $ atomically $ do appendTVar tvar "B"
+                                stmIO $ incrementMVar mvar
+                                appendTVar tvar "BB"
+  mapM_ wait [tA,tB]
+  (,) <$> (atomically $ readTVar tvar) <*> readMVar mvar
+
+
+
+
+
+
 
 data Log where
   Nil       :: Log
@@ -15,15 +42,6 @@ commit :: Log -> IO ()
 commit Nil               = return ()
 commit (SnocIO ops body) = do commit ops
                               body
---commit (SnocRead  ...) = ...
---commit (SnocWrite ...) = ...
-
-
-
-
-
-
-
 commit (SnocRead  ops _      v) = do
   modifyMVar_ v $ \vstate' ->
     return $ vstate' { owner = Nothing }
@@ -233,8 +251,3 @@ block var = do takeMVar var
 signal :: Signal -> IO ()
 signal var = do _ <- tryPutMVar var ()
                 return ()
-
-
-
-main :: IO ()
-main = return ()
