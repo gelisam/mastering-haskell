@@ -17,8 +17,10 @@ executable course
   -- other-modules:       
   build-depends:       base
                      , async
+                     , inline-c
                      , stm
                      , transformers
   hs-source-dirs:      src
+  c-sources:           src/Main.c
   default-language:    Haskell2010
   ghc-options: -W -Wall -threaded -rtsopts -with-rtsopts=-N
