@@ -13,15 +13,15 @@ traceReadMVar var = do
 main :: IO ()
 main = do
   lock1 <- newLock; var1 <- newMVar []
-  lockX <- newLock; varX <- newMVar ("1", lock1, var1)
-  tA <- async $ withLock lockX $ do (l, v) <- traceReadMVar varX
+  lock2 <- newLock; var2 <- newMVar []
+  tA <- async $ withLock lock1 $ do traceAppendMVar var1 "A"
                                     traceSleep "A" 0.5
-                                    withLock l $ do
-                                      traceAppendMVar v "AA"
-  tB <- async $ withLock lockX $ do (l, v) <- traceReadMVar varX
+                                    withLock lock2 $ do
+                                      traceAppendMVar var2 "AA"
+  tB <- async $ withLock lock2 $ do traceAppendMVar var2 "B"
                                     traceSleep "B" 0.5
-                                    withLock l $ do
-                                      traceAppendMVar v "BB"
+                                    withLock lock1 $ do
+                                      traceAppendMVar var1 "BB"
   mapM_ wait [tA,tB]
 
 
