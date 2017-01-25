@@ -1,26 +1,26 @@
+{-# LANGUAGE QuasiQuotes, RankNTypes, TemplateHaskell #-}
 module Main where
 import Control.Concurrent.Async
-import Data.IORef
+import Foreign
+import qualified Language.C.Inline as C
 
-
-
-compareAndSwap :: Eq a => IORef a -> a -> a -> IO Bool
-compareAndSwap ref expected replacement = do
-  actual <- readIORef ref
-  if actual == expected then do writeIORef ref replacement
-                                return True
-                        else return False
-
-
-
+compareAndSwap :: Ptr C.CInt -> C.CInt -> C.CInt -> IO Bool
+compareAndSwap ptr expected replacement = do
+  r <- [C.block| int {
+         return __sync_bool_compare_and_swap(
+           $(int* ptr),
+           $(int expected),
+           $(int replacement)
+         );
+       }|]
+  return (r /= 0)
 
 
 
 main :: IO ()
-main = printUniqueResults [] $ do
-  ref <- newIORef (0 :: Int)
-  tA <- async $ compareAndSwap ref 0 1
-  tB <- async $ compareAndSwap ref 0 1
+main = printUniqueResults [] $ with 0 $ \ptr -> do
+  tA <- async $ compareAndSwap ptr 0 1
+  tB <- async $ compareAndSwap ptr 0 1
   mapM wait [tA,tB]
 
 
