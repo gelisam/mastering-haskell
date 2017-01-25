@@ -1,27 +1,22 @@
 {-# LANGUAGE GADTs, LambdaCase #-}
 module Main where
 import Control.Concurrent
-import Control.Concurrent.Async
 
-incrementMVar :: Num a => MVar a -> IO ()
-incrementMVar var = modifyMVar_ var $ (return . (+1))
+data Log where
+  Nil       :: Log
+  SnocIO    :: Log -> IO () -> Log
+  SnocRead  :: Log -> VState a -> TVar a -> Log
+  SnocWrite :: Log -> VState a -> TVar a -> Log
 
+stmIO :: IO () -> STM ()
+stmIO body = STM $ \_ -> return (SnocIO Nil body, Right ())
 
-
-
-
-main :: IO ()
-main = printUniqueResults [] $ do
-  tvar <- atomically $ newTVar []
-  mvar <- newMVar (0 :: Int)
-  tA <- async $ atomically $ do appendTVar tvar "A"
-                                --liftIO $ incrementMVar mvar
-                                appendTVar tvar "AA"
-  tB <- async $ atomically $ do appendTVar tvar "B"
-                                --liftIO $ incrementMVar mvar
-                                appendTVar tvar "BB"
-  mapM_ wait [tA,tB]
-  (,) <$> (atomically $ readTVar tvar) <*> readMVar mvar
+commit :: Log -> IO ()
+commit Nil               = return ()
+commit (SnocIO ops body) = do commit ops
+                              body
+--commit (SnocRead  ...) = ...
+--commit (SnocWrite ...) = ...
 
 
 
@@ -29,8 +24,16 @@ main = printUniqueResults [] $ do
 
 
 
-
-
+commit (SnocRead  ops _      v) = do
+  modifyMVar_ v $ \vstate' ->
+    return $ vstate' { owner = Nothing }
+  commit ops
+commit (SnocWrite ops vstate v) = do
+  s <- newSignal
+  modifyMVar_ v $ \vstate' ->
+    return $ vstate' { isChanged = s, owner = Nothing }
+  signal (isChanged vstate)
+  commit ops
 
 
 
@@ -45,6 +48,9 @@ appendMVar var x = modifyMVar_ var (return . (++ [x]))
 
 appendTVar :: TVar [a] -> a -> STM ()
 appendTVar var x = modifyTVar var (++ [x])
+
+incrementMVar :: Num a => MVar a -> IO ()
+incrementMVar var = modifyMVar_ var $ (return . (+1))
 
 
 
@@ -157,25 +163,13 @@ instance Monad STM where
 
 
 
-commit :: Log -> IO ()
-commit Nil                      = return ()
-commit (SnocRead  ops _      v) = do
-  modifyMVar_ v $ \vstate' ->
-    return $ vstate' { owner = Nothing }
-  commit ops
-commit (SnocWrite ops vstate v) = do
-  s <- newSignal
-  modifyMVar_ v $ \vstate' ->
-    return $ vstate' { isChanged = s, owner = Nothing }
-  signal (isChanged vstate)
-  commit ops
-
 waitForChange :: Log -> IO ()
 waitForChange lg = do someVarChanged <- newSignal
                       go someVarChanged lg
                       block someVarChanged
   where
     go _ Nil                       = return ()
+    go s (SnocIO    ops _)         = go s ops
     go s (SnocRead  ops vstate _)  = do _ <- forkIO $ do
                                           block (isChanged vstate)
                                           signal s
@@ -183,11 +177,6 @@ waitForChange lg = do someVarChanged <- newSignal
     go s (SnocWrite ops _      _) = go s ops
 
 
-
-data Log where
-  Nil       :: Log
-  SnocRead  :: Log -> VState a -> TVar a -> Log
-  SnocWrite :: Log -> VState a -> TVar a -> Log
 
 loggedRead :: TVar a -> IO (Log, a)
 loggedRead var = do vstate <- readMVar var
@@ -200,6 +189,7 @@ loggedWrite var x' = do vstate <- takeMVar var
 
 revert :: Log -> IO ()
 revert Nil                      = return ()
+revert (SnocIO    ops _)        = revert ops
 revert (SnocRead  ops _      _) = revert ops
 revert (SnocWrite ops vstate v) = do let x = value vstate
                                      modifyMVar_ v $ \vstate' ->
@@ -208,6 +198,7 @@ revert (SnocWrite ops vstate v) = do let x = value vstate
 
 release :: Log -> IO ()
 release Nil                 = return ()
+release (SnocIO    ops _)   = release ops
 release (SnocRead  ops _ v) = do modifyMVar_ v $ \vstate ->
                                    return $ vstate { owner = Nothing }
                                  release ops
@@ -219,9 +210,10 @@ instance Monoid Log where
   mempty = Nil
   mappend ops = go
     where
-      go Nil                  = ops
-      go (SnocRead  ops' x v) = SnocRead  (go ops') x v
-      go (SnocWrite ops' x v) = SnocWrite (go ops') x v
+      go Nil                   = ops
+      go (SnocIO    ops' body) = SnocIO    (go ops') body
+      go (SnocRead  ops' x v)  = SnocRead  (go ops') x v
+      go (SnocWrite ops' x v)  = SnocWrite (go ops') x v
 
 
 
@@ -241,3 +233,8 @@ block var = do takeMVar var
 signal :: Signal -> IO ()
 signal var = do _ <- tryPutMVar var ()
                 return ()
+
+
+
+main :: IO ()
+main = return ()
