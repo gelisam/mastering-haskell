@@ -2,19 +2,31 @@
 module Main where
 import Control.Concurrent
 
-data STM a = STM { runSTM :: Transaction
-                          -> IO (Log, Either Abort a)
-                 }
+data VState a = VState { value     :: a
+                       , isChanged :: Signal
+                       , owner     :: Maybe Transaction
+                       }
+type TVar a = MVar (VState a)
 
-data Transaction = Transaction
-  { isDone          :: Signal
-  , conflictingWith :: MVar (Maybe Transaction)
-  }
+acquireTVar :: TVar a -> STM ()
+acquireTVar var = (abortIfNeeded >>) $ STM $ \thisT -> do
+  vstate <- takeMVar var
+  case owner vstate of
+    Nothing -> do
+      putMVar var $ vstate { owner = Just thisT }
+      return (Nil, Right ())
+    Just t -> do
+      putMVar var vstate
+      if t == thisT then return $ (Nil, Right ())
+                    else do _ <- runSTM (terminate t) thisT
+                            block (isDone t)
+                            runSTM (acquireTVar var) thisT
 
-terminate :: Transaction -> STM ()
-terminate t = STM $ \thisT -> do
-  modifyMVar_ (conflictingWith t) $ \_ -> return $ Just thisT
-  return (Nil, Right ())
+
+
+
+
+
 
 abortIfNeeded :: STM ()
 abortIfNeeded = STM $ \thisT -> do
@@ -22,19 +34,24 @@ abortIfNeeded = STM $ \thisT -> do
     Nothing -> return (Nil, Right ())
     Just t  -> return (Nil, Left (Conflict t))
 
-
-
-
-
-
-
-
-
+terminate :: Transaction -> STM ()
+terminate t = STM $ \thisT -> do
+  modifyMVar_ (conflictingWith t) $ \_ -> return $ Just thisT
+  return (Nil, Right ())
 
 
 
 data Abort = Check
            | Conflict Transaction
+
+data STM a = STM { runSTM :: Transaction
+                          -> IO (Log, Either Abort a)
+                 }
+
+data Transaction = Transaction
+  { isDone          :: Signal
+  , conflictingWith :: MVar (Maybe Transaction)
+  } deriving Eq
 
 atomically :: STM a -> IO a
 atomically sx = do
@@ -44,6 +61,7 @@ atomically sx = do
                         signal (isDone thisT)
                         return x
     (lg, Left e)  -> do revert lg
+                        release lg
                         signal (isDone thisT)
                         case e of
                           Check      -> waitForChange lg
@@ -57,15 +75,18 @@ check b = STM $ \_ -> do
   return (Nil, if b then Right () else Left Check)
 
 newTVar :: a -> STM (TVar a)
-newTVar x = STM $ \_ -> do s <- newSignal
-                           var <- newMVar $ VState x s
-                           return (Nil, Right var)
+newTVar x = STM $ \thisT -> do
+  s <- newSignal
+  var <- newMVar $ VState x s Nothing
+  runSTM (writeTVar var x >> return var) thisT
 
 readTVar :: TVar a -> STM a
-readTVar var = STM $ \_ -> fmap Right <$> loggedRead var
+readTVar var = (acquireTVar var >>)
+             $ STM $ \_ -> fmap Right <$> loggedRead var
 
 writeTVar :: TVar a -> a -> STM ()
-writeTVar var x = STM $ \_ -> fmap Right <$> loggedWrite var x
+writeTVar var x = (acquireTVar var >>)
+                $ STM $ \_ -> fmap Right <$> loggedWrite var x
 
 
 
@@ -90,18 +111,16 @@ instance Monad STM where
 
 
 
-data VState a = VState { value     :: a
-                       , isChanged :: Signal
-                       }
-type TVar a = MVar (VState a)
-
 commit :: Log -> IO ()
 commit Nil                      = return ()
-commit (SnocRead  ops _      _) = commit ops
+commit (SnocRead  ops _      v) = do
+  modifyMVar_ v $ \vstate' ->
+    return $ vstate' { owner = Nothing }
+  commit ops
 commit (SnocWrite ops vstate v) = do
   s <- newSignal
   modifyMVar_ v $ \vstate' ->
-    return $ vstate' { isChanged = s }
+    return $ vstate' { isChanged = s, owner = Nothing }
   signal (isChanged vstate)
   commit ops
 
@@ -136,9 +155,19 @@ loggedWrite var x' = do vstate <- takeMVar var
 revert :: Log -> IO ()
 revert Nil                      = return ()
 revert (SnocRead  ops _      _) = revert ops
-revert (SnocWrite ops vstate v) = do modifyMVar_ v $ \_ ->
-                                       return vstate
+revert (SnocWrite ops vstate v) = do let x = value vstate
+                                     modifyMVar_ v $ \vstate' ->
+                                       return $ vstate' { value = x }
                                      revert ops
+
+release :: Log -> IO ()
+release Nil                 = return ()
+release (SnocRead  ops _ v) = do modifyMVar_ v $ \vstate ->
+                                   return $ vstate { owner = Nothing }
+                                 release ops
+release (SnocWrite ops _ v) = do modifyMVar_ v $ \vstate ->
+                                   return $ vstate { owner = Nothing }
+                                 release ops
 
 instance Monoid Log where
   mempty = Nil
