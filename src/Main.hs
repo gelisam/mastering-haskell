@@ -1,25 +1,21 @@
 module Main where
 import Data.IORef
 import Data.Time
-import qualified Data.MultiMap as MM
+import qualified Data.Map as M
 
 
-type VisitTracker = IORef (MM.MultiMap User UTCTime)
+type PopupTracker = IORef (M.Map User UTCTime)
 
-newVisitTracker :: IO VisitTracker
-newVisitTracker = newIORef MM.empty
+newPopupTracker :: IO PopupTracker
+newPopupTracker = newIORef M.empty
 
-recordVisit :: VisitTracker -> User -> UTCTime -> IO ()
-recordVisit ref u t = do
-  modifyIORef ref $ MM.insert u t
+recordPopup :: PopupTracker -> User -> UTCTime -> IO ()
+recordPopup ref u t = do
+  modifyIORef ref $ M.insert u t
 
-countVisits :: VisitTracker -> User -> IO Int
-countVisits ref u = do
-  length . (MM.! u) <$> readIORef ref
-
-countVisitsSince :: VisitTracker -> User -> UTCTime -> IO Int
-countVisitsSince ref u t = do
-  length . filter (>= t) . (MM.! u) <$> readIORef ref
+getLastPopup :: PopupTracker -> User -> IO (Maybe UTCTime)
+getLastPopup ref u = do
+  M.lookup u <$> readIORef ref
 
 
 
