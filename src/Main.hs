@@ -1,6 +1,31 @@
 {-# LANGUAGE GADTs #-}
 module Main where
 
+runSignal :: (Int -> Int) -> (Int -> Int) -> Signal a -> a
+runSignal delayedVisitCount delayedPopupCount = go 0
+  where
+    go :: Int -> Signal a -> a
+    go _     (Pure x)   = x
+    go delay (Ap cc sx) = (go delay cc) (runSignalF delay sx)
+    
+    runSignalF :: Int -> SignalF a -> a
+    runSignalF delay VisitCount         = delayedVisitCount delay
+    runSignalF delay PopupCount         = delayedPopupCount delay
+    runSignalF delay (TimeDelayed d sx) = go (delay + d) sx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- ((f <$> fx) <*> fy) <*> fz
 data FreeAp f a where
   Pure :: a -> FreeAp f a
@@ -47,6 +72,10 @@ recentPopup = (>) <$> popupCount <*> timeDelayed 2 popupCount
 shouldPopup :: Signal Bool
 shouldPopup = (&&) <$> shownInterest 
                    <*> (not <$> recentPopup)
+
+
+
+data User = User deriving (Eq, Ord)
 
 
 
