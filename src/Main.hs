@@ -1,8 +1,7 @@
 module Main where
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.Class
-import Data.IORef
+import Control.Monad.Trans.State
 import ListT
 
 
@@ -14,14 +13,14 @@ import ListT
 
 
 
-example :: IORef String -> ListT IO ([Int], String)
-example ref = do
+
+example :: StateT String (ListT IO) [Int]
+example = do
   xs <- replicateM 3 $ do x <- (return 0 <|> return 1)
-                          lift $ modifyIORef ref (++ show x)
+                          modify (++ show x)
                           return x
-  lift $ modifyIORef ref (++ "|")
-  s <- lift $ readIORef ref
-  return (xs, s)
+  modify (++ "|")
+  return xs
 
 
 
@@ -36,8 +35,7 @@ runListT (ListT mxs) = do
 
 
 main :: IO ()
-main = do ref <- newIORef ""
-          x1:xs <- runListT (example ref)
+main = do x1:xs <- runListT $ ($ []) $ runStateT example
           putStr "[ "
           print x1
           forM_ xs $ \x -> do
