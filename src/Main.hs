@@ -1,25 +1,25 @@
 module Main where
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.State
 import ListT
 
-type M s = ListT
-         ( StateT s
+
+type M s = StateT s  --  <---.
+         ( ListT     --  <---'
          ( IO ))
 
-runM :: M s a -> s -> IO ([a], s)
-runM mx s0 = ($ s0) $ runStateT
-           $ runListT
+runM :: M s a -> s -> IO [(a, s)]
+runM mx s0 = runListT            --  <---.
+           $ ($ s0) $ runStateT  --  <---'
            $ mx
 
 example :: M String [Int]
 example = do
   xs <- replicateM 3 $ do x <- (return 0 <|> return 1)
-                          lift $ modify (++ show x)
+                          modify (++ show x)
                           return x
-  lift $ modify (++ "|")
+  modify (++ "|")
   return xs
 
 
@@ -35,13 +35,10 @@ runListT (ListT mxs) = do
 
 
 main :: IO ()
-main = do (x1:xs,trace) <- runM example []
-          putStr "( [ "
+main = do x1:xs <- runM example []
+          putStr "[ "
           print x1
           forM_ xs $ \x -> do
-            putStr "  , "
+            putStr ", "
             print x
-          putStrLn "  ]"
-          putStr ", "
-          print trace
-          putStrLn ")"
+          putStrLn "]"
