@@ -1,5 +1,4 @@
 module Main where
-import Control.Applicative
 import Control.Monad
 import ListT
 
@@ -14,14 +13,15 @@ import ListT
 
 
 
-example :: String -> ListT IO ([Int], String)
-example s0 = do x1 <- (return 0 <|> return 1)
-                let s1 = s0 ++ show x1
-                x2 <- (return 0 <|> return 1)
-                let s2 = s1 ++ show x2
-                x3 <- (return 0 <|> return 1)
-                let s3 = s2 ++ show x3
-                return ([x1,x2,x3], s3 ++ "|")
+
+example :: String -> IO [([Int], String)]
+example s0 = fmap concat . forM [0,1] $ \x1 -> do
+               let s1 = s0 ++ show x1
+               fmap concat . forM [0,1] $ \x2 -> do
+                 let s2 = s1 ++ show x2
+                 fmap concat . forM [0,1] $ \x3 -> do
+                   let s3 = s2 ++ show x3
+                   return [([x1,x2,x3], s3 ++ "|")]
 
 
 
@@ -36,7 +36,7 @@ runListT (ListT mxs) = do
 
 
 main :: IO ()
-main = do x1:xs <- runListT (example [])
+main = do x1:xs <- example []
           putStr "[ "
           print x1
           forM_ xs $ \x -> do
