@@ -1,12 +1,12 @@
 module Main where
-import Data.IORef
 import Data.Map as M
 import Data.Time
 
+
 type Log = Map User [UTCTime]
 
-visitLog :: IORef Log
-visitLog = undefined
+
+
 
 delayedCount :: User -> UTCTime -> Log -> Int -> Int
 delayedCount u (UTCTime today time) lg days =
@@ -15,10 +15,10 @@ delayedCount u (UTCTime today time) lg days =
     t0 = UTCTime (addDays (-fromIntegral days) today) time
 
 delayedVisitCount :: User -> UTCTime -> IO (Int -> Int)
-delayedVisitCount u t = delayedCount u t <$> readIORef visitLog
+delayedVisitCount u t = delayedCount u t <$> rpcReadVisitLog
 
---rpcDelayedVisitCount :: User -> UTCTime -> IO (Int -> Int)
---rpcDelayedVisitCount = rpc host port "delayedVisitCount"
+rpcReadVisitLog :: IO Log
+rpcReadVisitLog = rpc host port "readVisitLog"
 
 
 
