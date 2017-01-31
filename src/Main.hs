@@ -1,18 +1,26 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE BangPatterns, GADTs #-}
 module Main where
+import Data.IORef
 import Data.Map as M
 import Data.Time
 
-type Log = Map User [UTCTime]
+shouldDisplayPopup :: Signal Bool
+                   -> IORef Log -> IORef Log
+                   -> User -> IO Bool
+shouldDisplayPopup shouldPopup visitLog popupLog u = do
+  t <- getCurrentTime
+  modifyIORef visitLog (record u t)
+  b <- runSignal <$> (delayedCount u t <$> readIORef visitLog)
+                 <*> (delayedCount u t <$> readIORef popupLog)
+                 <*> pure shouldPopup
+  when b $ do
+    modifyIORef popupLog (record u t)
+  return b
 
-delayedCount :: User -> UTCTime -> Log -> Int -> Int
-delayedCount u (UTCTime today time) lg days =
-    length $ takeWhile (<= t0) $ M.findWithDefault [] u lg
-  where
-    t0 = UTCTime (addDays (-fromIntegral days) today) time
 
-record :: User -> UTCTime -> Log -> Log
-record u t = M.insertWith (++) u [t]
+
+
+
 
 
 
@@ -39,6 +47,19 @@ runSignal delayedVisitCount delayedPopupCount = go 0
     runSignalF delay VisitCount         = delayedVisitCount delay
     runSignalF delay PopupCount         = delayedPopupCount delay
     runSignalF delay (TimeDelayed d sx) = go (delay + d) sx
+
+
+
+type Log = Map User [UTCTime]
+
+delayedCount :: User -> UTCTime -> Log -> Int -> Int
+delayedCount u (UTCTime today time) lg days =
+    length $ takeWhile (<= t0) $ M.findWithDefault [] u lg
+  where
+    t0 = UTCTime (addDays (-fromIntegral days) today) time
+
+record :: User -> UTCTime -> Log -> Log
+record u t = M.insertWith (++) u [t]
 
 
 
@@ -75,23 +96,13 @@ instance Applicative (FreeAp f) where
 
 
 
-lastWeekVisitCount :: Signal Int
-lastWeekVisitCount = (-) <$> visitCount <*> timeDelayed 7 visitCount
-
-shownInterest :: Signal Bool
-shownInterest = (||) <$> ((>= 10) <$> visitCount)
-                     <*> ((>=  3) <$> lastWeekVisitCount)
-
-recentPopup :: Signal Bool
-recentPopup = (>) <$> popupCount <*> timeDelayed 2 popupCount
-
-shouldPopup :: Signal Bool
-shouldPopup = (&&) <$> shownInterest 
-                   <*> (not <$> recentPopup)
-
-
-
 data User = User deriving (Eq, Ord)
+
+
+
+when :: Bool -> IO () -> IO ()
+when False _    = return ()
+when True  body = body
 
 
 
