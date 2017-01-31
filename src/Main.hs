@@ -1,5 +1,32 @@
 {-# LANGUAGE GADTs #-}
 module Main where
+import Data.Map as M
+import Data.Time
+
+type Log = Map User [UTCTime]
+
+delayedCount :: User -> UTCTime -> Log -> Int -> Int
+delayedCount u (UTCTime today time) lg days =
+    length $ takeWhile (<= t0) $ M.findWithDefault [] u lg
+  where
+    t0 = UTCTime (addDays (-fromIntegral days) today) time
+
+record :: User -> UTCTime -> Log -> Log
+record u t = M.insertWith (++) u [t]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 runSignal :: (Int -> Int) -> (Int -> Int) -> Signal a -> a
 runSignal delayedVisitCount delayedPopupCount = go 0
@@ -12,17 +39,6 @@ runSignal delayedVisitCount delayedPopupCount = go 0
     runSignalF delay VisitCount         = delayedVisitCount delay
     runSignalF delay PopupCount         = delayedPopupCount delay
     runSignalF delay (TimeDelayed d sx) = go (delay + d) sx
-
-
-
-
-
-
-
-
-
-
-
 
 
 
