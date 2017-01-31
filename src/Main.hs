@@ -1,24 +1,24 @@
 module Main where
-import Data.IORef
 import Data.Time
-import qualified Data.MultiMap as MM
-import qualified Data.Map as M
+import Network
+import System.IO
 
-shouldDisplayPopup :: VisitTracker -> PopupTracker -> User -> IO Bool
-shouldDisplayPopup visitTracker popupTracker u = do
+
+shouldDisplayPopup :: User -> IO Bool
+shouldDisplayPopup u = do
   t@(UTCTime today time) <- getCurrentTime
   let _48h_ago   = UTCTime (addDays (-2) today) time
   let _7days_ago = UTCTime (addDays (-7) today) time
   
-  recordVisit visitTracker u t
-  r <- getLastPopup popupTracker u
+  rpcRecordVisit u t
+  r <- rpcGetLastPopup u
   if maybe True (<= _48h_ago) r 
-  then do totalVisits  <- countVisits      visitTracker u
-          recentVisits <- countVisitsSince visitTracker u _7days_ago
+  then do totalVisits  <- rpcCountVisits      u
+          recentVisits <- rpcCountVisitsSince u _7days_ago
           let shouldPopup = totalVisits >= 10
                          || recentVisits >= 3
           when shouldPopup $ do
-            recordPopup popupTracker u t
+            rpcRecordPopup u t
           return shouldPopup
   else return False
 
@@ -38,40 +38,106 @@ shouldDisplayPopup visitTracker popupTracker u = do
 
 
 
-type VisitTracker = IORef (MM.MultiMap User UTCTime)
+host :: HostName
+host = "localhost"
 
-newVisitTracker :: IO VisitTracker
-newVisitTracker = newIORef MM.empty
-
-recordVisit :: VisitTracker -> User -> UTCTime -> IO ()
-recordVisit ref u t = do
-  modifyIORef ref $ MM.insert u t
-
-countVisits :: VisitTracker -> User -> IO Int
-countVisits ref u = do
-  length . (MM.! u) <$> readIORef ref
-
-countVisitsSince :: VisitTracker -> User -> UTCTime -> IO Int
-countVisitsSince ref u t = do
-  length . filter (>= t) . (MM.! u) <$> readIORef ref
+port :: PortNumber
+port = 1234
 
 
-type PopupTracker = IORef (M.Map User UTCTime)
+rpcRecordVisit :: User -> UTCTime -> IO ()
+rpcRecordVisit = rpc host port "recordVisit"
 
-newPopupTracker :: IO PopupTracker
-newPopupTracker = newIORef M.empty
+rpcCountVisits :: User -> IO Int
+rpcCountVisits = rpc host port "countVisits"
 
-recordPopup :: PopupTracker -> User -> UTCTime -> IO ()
-recordPopup ref u t = do
-  modifyIORef ref $ M.insert u t
+rpcCountVisitsSince :: User -> UTCTime -> IO Int
+rpcCountVisitsSince = rpc host port "countVisitsSince"
 
-getLastPopup :: PopupTracker -> User -> IO (Maybe UTCTime)
-getLastPopup ref u = do
-  M.lookup u <$> readIORef ref
+
+rpcRecordPopup :: User -> UTCTime -> IO ()
+rpcRecordPopup = rpc host port "recordPopup"
+
+rpcGetLastPopup :: User -> IO (Maybe UTCTime)
+rpcGetLastPopup = rpc host port "getLastPopup"
 
 
 
-data User = User deriving (Eq, Ord)
+data User = User deriving (Eq, Ord, Read, Show)
+
+
+
+serve :: PortNumber -> [(String,Handler)] -> IO ()
+serve port_ routes = do
+  s <- listenOn (PortNumber port_)
+  forever $ do (h, _, _) <- accept s
+               path <- hGetLine h
+               case lookup path routes of
+                 Just handler -> handler h
+                 Nothing      -> hClose h
+
+rpc :: RPC b => HostName -> PortNumber -> String -> b
+rpc host_ port_ path = clientSide $ do
+  h <- connectTo host_ (PortNumber port_)
+  hPutStrLn h path
+  return h
+
+
+
+
+
+
+type Handler = Handle -> IO ()
+class RPC a where
+  serverSide :: a -> Handler
+  clientSide :: IO Handle -> a
+
+instance (Show a, Read a, RPC b) => RPC (a -> b) where
+  serverSide f h = do x <- read <$> hGetLine h
+                      serverSide (f x) h
+  clientSide ioH x = clientSide $ do h <- ioH
+                                     hPutStrLn h (show x)
+                                     return h
+
+instance (Show b, Read b, NFData b) => RPC (IO b) where
+  serverSide ioY h = do y <- ioY
+                        hPutStrLn h (show y)
+                        hClose h
+  clientSide ioH = do h <- ioH
+                      y <- read <$> hGetLine h
+                      y `deepseq` hClose h
+                      return y
+
+
+
+forever :: IO () -> IO ()
+forever body = body >> forever body
+
+
+class NFData a where
+  deepseq :: a -> b -> b
+
+instance NFData () where
+  deepseq () y = y
+
+instance NFData Bool where
+  deepseq x y = x `seq` y
+
+instance NFData Int where
+  deepseq x y = x `seq` y
+
+instance NFData Day where
+  deepseq x y = x `seq` y
+
+instance NFData DiffTime where
+  deepseq x y = x `seq` y
+
+instance NFData UTCTime where
+  deepseq (UTCTime today time) y = today `deepseq` time `deepseq` y
+
+instance NFData a => NFData (Maybe a) where
+  deepseq Nothing  y = y
+  deepseq (Just x) y = deepseq x y
 
 
 
