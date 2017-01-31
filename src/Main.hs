@@ -10,16 +10,16 @@ shouldDisplayPopup u = do
   let _48h_ago   = UTCTime (addDays (-2) today) time
   let _7days_ago = UTCTime (addDays (-7) today) time
   
-  rpcRecordVisit u t
-  r <- rpcGetLastPopup u
+  r <- rpcBlock1 u t  -- do rpcRecordVisit u t
+                      --    r <- rpcGetLastPopup u
   if maybe True (<= _48h_ago) r 
-  then do totalVisits  <- rpcCountVisits      u
-          recentVisits <- rpcCountVisitsSince u _7days_ago
-          let shouldPopup = totalVisits >= 10
-                         || recentVisits >= 3
-          when shouldPopup $ do
-            rpcRecordPopup u t
-          return shouldPopup
+  then rpcBlock2 u _7days_ago today -- do totalVisits <- ...
+                                    --    recentVisits <- ... 
+                                    --    let shouldPopup = ...
+                                    --    when shouldPopup $ do
+                                    --      rpcRecordPopup u t
+                                    --    return shouldPopup
+  
   else return False
 
 
@@ -43,6 +43,13 @@ host = "localhost"
 
 port :: PortNumber
 port = 1234
+
+
+rpcBlock1 :: User -> UTCTime -> IO (Maybe UTCTime)
+rpcBlock1 = rpc host port "block1"
+
+rpcBlock2 :: User -> UTCTime -> Day -> IO Bool
+rpcBlock2 = rpc host port "block2"
 
 
 rpcRecordVisit :: User -> UTCTime -> IO ()
@@ -138,12 +145,6 @@ instance NFData UTCTime where
 instance NFData a => NFData (Maybe a) where
   deepseq Nothing  y = y
   deepseq (Just x) y = deepseq x y
-
-
-
-when :: Bool -> IO () -> IO ()
-when False _    = return ()
-when True  body = body
 
 
 
