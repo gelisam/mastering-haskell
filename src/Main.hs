@@ -1,20 +1,20 @@
 {-# LANGUAGE BangPatterns, GADTs #-}
 module Main where
-import Data.IORef
-import Data.Map as M
 import Data.Time
+import Network
+import System.IO
 
-shouldDisplayPopup :: Signal Bool
-                   -> IORef Log -> IORef Log
-                   -> User -> IO Bool
-shouldDisplayPopup shouldPopup visitLog popupLog u = do
+
+
+shouldDisplayPopup :: Signal Bool -> User -> IO Bool
+shouldDisplayPopup shouldPopup u = do
   t <- getCurrentTime
-  modifyIORef visitLog (record u t)
-  b <- runSignal <$> (delayedCount u t <$> readIORef visitLog)
-                 <*> (delayedCount u t <$> readIORef popupLog)
+  rpcRecordVisit u t
+  b <- runSignal <$> rpcDelayedVisitCount u t
+                 <*> rpcDelayedPopupCount u t
                  <*> pure shouldPopup
   when b $ do
-    modifyIORef popupLog (record u t)
+    rpcRecordPopup u t
   return b
 
 
@@ -32,7 +32,24 @@ shouldDisplayPopup shouldPopup visitLog popupLog u = do
 
 
 
+host :: HostName
+host = "localhost"
 
+port :: PortNumber
+port = 1234
+
+
+rpcRecordVisit :: User -> UTCTime -> IO ()
+rpcRecordVisit = rpc host port "recordVisit"
+
+rpcDelayedVisitCount :: User -> UTCTime -> IO (Int -> Int)
+rpcDelayedVisitCount = undefined
+
+rpcDelayedPopupCount :: User -> UTCTime -> IO (Int -> Int)
+rpcDelayedPopupCount = undefined
+
+rpcRecordPopup :: User -> UTCTime -> IO ()
+rpcRecordPopup = rpc host port "recordPopup"
 
 
 
@@ -47,19 +64,6 @@ runSignal delayedVisitCount delayedPopupCount = go 0
     runSignalF delay VisitCount         = delayedVisitCount delay
     runSignalF delay PopupCount         = delayedPopupCount delay
     runSignalF delay (TimeDelayed d sx) = go (delay + d) sx
-
-
-
-type Log = Map User [UTCTime]
-
-delayedCount :: User -> UTCTime -> Log -> Int -> Int
-delayedCount u (UTCTime today time) lg days =
-    length $ takeWhile (<= t0) $ M.findWithDefault [] u lg
-  where
-    t0 = UTCTime (addDays (-fromIntegral days) today) time
-
-record :: User -> UTCTime -> Log -> Log
-record u t = M.insertWith (++) u [t]
 
 
 
@@ -96,14 +100,86 @@ instance Applicative (FreeAp f) where
 
 
 
-data User = User deriving (Eq, Ord)
+data User = User deriving (Eq, Ord, Read, Show)
 
 
+
+serve :: PortNumber -> [(String,Handler)] -> IO ()
+serve port_ routes = do
+  s <- listenOn (PortNumber port_)
+  forever $ do (h, _, _) <- accept s
+               path <- hGetLine h
+               case lookup path routes of
+                 Just handler -> handler h
+                 Nothing      -> hClose h
+
+rpc :: RPC b => HostName -> PortNumber -> String -> b
+rpc host_ port_ path = clientSide $ do
+  h <- connectTo host_ (PortNumber port_)
+  hPutStrLn h path
+  return h
+
+
+
+
+
+
+type Handler = Handle -> IO ()
+class RPC a where
+  serverSide :: a -> Handler
+  clientSide :: IO Handle -> a
+
+instance (Show a, Read a, RPC b) => RPC (a -> b) where
+  serverSide f h = do x <- read <$> hGetLine h
+                      serverSide (f x) h
+  clientSide ioH x = clientSide $ do h <- ioH
+                                     hPutStrLn h (show x)
+                                     return h
+
+instance (Show b, Read b, NFData b) => RPC (IO b) where
+  serverSide ioY h = do y <- ioY
+                        hPutStrLn h (show y)
+                        hClose h
+  clientSide ioH = do h <- ioH
+                      y <- read <$> hGetLine h
+                      y `deepseq` hClose h
+                      return y
+
+
+
+class NFData a where
+  deepseq :: a -> b -> b
+
+instance NFData () where
+  deepseq () y = y
+
+instance NFData Bool where
+  deepseq x y = x `seq` y
+
+instance NFData Int where
+  deepseq x y = x `seq` y
+
+instance NFData Day where
+  deepseq x y = x `seq` y
+
+instance NFData DiffTime where
+  deepseq x y = x `seq` y
+
+instance NFData UTCTime where
+  deepseq (UTCTime today time) y = today `deepseq` time `deepseq` y
+
+instance NFData a => NFData (Maybe a) where
+  deepseq Nothing  y = y
+  deepseq (Just x) y = deepseq x y
+
+
+
+forever :: IO () -> IO ()
+forever body = body >> forever body
 
 when :: Bool -> IO () -> IO ()
-when False _    = return ()
+when False _   = return ()
 when True  body = body
-
 
 
 main :: IO ()
