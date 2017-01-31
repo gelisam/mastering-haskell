@@ -1,40 +1,41 @@
 module Main where
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Control.Monad.Trans.Reader
-import Control.Monad.Trans.Writer
 
-type STM = ReaderT Transaction
-         ( EitherT Abort
-         ( WriterT Log
-         ( IO )))
+type STM = ReaderT TransactionId  --  type STM = ReaderT Transaction
+         ( EitherT Abort          --           ( EitherT Abort
+         ( IO ))                  --           ( WriterT Log
+                                  --           ( IO )))
 
-
-askSTM :: STM Transaction
-askSTM = ask
+rpcAskSTM :: STM Transaction
+rpcAskSTM = do transactionId <- ask
+               liftIO $ rpc host port "askSTM" transactionId
 
 abortSTM :: Abort -> STM ()
 abortSTM e = lift $ left e
 
-tellSTM :: Log -> STM ()
-tellSTM lg = lift $ lift $ tell lg
+rpcTellSTM :: Log -> STM ()
+rpcTellSTM lg = liftIO $ rpc host port "tellSTM" lg
 
 
 
 
 
 
+host :: String
+host = undefined
+
+port :: Int
+port = undefined
+
+rpc :: String -> Int -> String -> a
+rpc = undefined
 
 
 
-
-
-
-
-
-
-
-
+data TransactionId
 data Transaction
 data Log
 data Abort
