@@ -1,23 +1,22 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts #-}
 module Main where
-import Control.Monad.Error.Class
-import Control.Monad.Reader
-import Control.Monad.Writer
+import Control.Monad.Trans.Either
+import Control.Monad.Trans.Reader
+import Control.Monad.Trans.Writer
 
-type TAL m = ( MonadReader Transaction m
-             , MonadError  Abort       m
-             , MonadWriter Log         m
-             , MonadIO                 m
-             )
 
-askTAL :: TAL m => m Transaction
-askTAL = ask
+type STM = ReaderT Transaction  -- Transaction -> 
+         ( EitherT Abort        --     Either Abort
+         ( WriterT Log          --    (              , Log)
+         ( IO )))               -- IO               a
 
-abortTAL :: TAL m => Abort -> m ()
-abortTAL e = throwError e
 
-tellTAL :: TAL m => Log -> m ()
-tellTAL lg = tell lg
+runSTM :: STM a -> Transaction -> IO (Either Abort a, Log)
+runSTM sx t = runWriterT
+            $ runEitherT
+            $ ($ t) $ runReaderT
+            $ sx
+
+
 
 
 
