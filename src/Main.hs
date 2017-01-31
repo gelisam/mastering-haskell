@@ -1,22 +1,23 @@
 module Main where
+import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
 
-
 type STM = ReaderT Transaction
-         ( WriterT Log    --  <---.
-         ( EitherT Abort  --  <---'
+         ( EitherT Abort
+         ( WriterT Log
          ( IO )))
 
---     :: STM a -> Transaction -> IO (Either Abort a, Log)
-runSTM :: STM a -> Transaction -> IO (Either Abort (a, Log))
-runSTM sx t = runEitherT  --  <---.
-            $ runWriterT  --  <---'
-            $ ($ t) $ runReaderT
-            $ sx
 
+askSTM :: STM Transaction
+askSTM = ask
 
+abortSTM :: Abort -> STM ()
+abortSTM e = lift $ left e
+
+tellSTM :: Log -> STM ()
+tellSTM lg = lift $ lift $ tell lg
 
 
 
