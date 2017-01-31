@@ -1,19 +1,25 @@
 module Main where
 
--- .---------------------------------------------.
--- | https://mynews.com/article/42            [x]|
--- |---------------------------------------------|
--- |                                             |
--- |  -- ----  -- ------- -- ----- -- ----- ---  |
--- |  --- -------- -+=============+ -- ------ -  |
--- |  -- --- - -----‖             ‖------- ----  | * 10+ visits
--- |  ----- ---     ‖  SUBSCRIBE  ‖              | * 3+ within 7 days
--- |                ‖    TODAY!   ‖              | * max 1 popup
--- |  - ---- -- ----‖             ‖- -- -------  |   every 48 hours
--- |  ---- --- - ---+=============+-- ----- ---  |
--- |  -- ---------                               |
--- |                                             |
--- '---------------------------------------------'
+data Signal a
+
+visitCount  :: Signal Int
+popupCount  :: Signal Int
+
+timeDelayed :: Int -> Signal a -> Signal a
+
+lastWeekVisitCount :: Signal Int
+lastWeekVisitCount = (-) <$> visitCount <*> timeDelayed 7 visitCount
+
+shownInterest :: Signal Bool
+shownInterest = (||) <$> ((>= 10) <$> visitCount)
+                     <*> ((>=  3) <$> lastWeekVisitCount)
+
+recentPopup :: Signal Bool
+recentPopup = (>) <$> popupCount <*> timeDelayed 2 popupCount
+
+shouldPopup :: Signal Bool
+shouldPopup = (&&) <$> shownInterest 
+                   <*> (not <$> recentPopup)
 
 
 
@@ -21,6 +27,24 @@ module Main where
 
 
 
+
+
+
+
+
+
+
+visitCount  = undefined
+popupCount  = undefined
+
+timeDelayed = undefined
+
+instance Functor Signal where
+  fmap = undefined
+
+instance Applicative Signal where
+  pure = undefined
+  (<*>) = undefined
 
 
 
