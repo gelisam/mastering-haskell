@@ -6,17 +6,17 @@ visitCount  :: Signal Int
 popupCount  :: Signal Int
 
 timeDelayed :: Int -> Signal a -> Signal a
-
+ioSignal    :: (Int -> IO a) -> Signal a
 
 lastWeekVisitCount :: Signal Int
 lastWeekVisitCount = (-) <$> visitCount <*> timeDelayed 7 visitCount
 
 shownInterest :: Signal Bool
-shownInterest = (||) <$> ((>= 10) <$> visitCount)
-                     <*> ((>=  3) <$> lastWeekVisitCount)
+shownInterest = ioSignal rpcShownInterest
+
 
 recentPopup :: Signal Bool
-recentPopup = (>) <$> popupCount <*> timeDelayed 2 popupCount
+recentPopup = ioSignal rpcRecentPopup
 
 shouldPopup :: Signal Bool
 shouldPopup = (&&) <$> shownInterest 
@@ -39,6 +39,7 @@ visitCount  = undefined
 popupCount  = undefined
 
 timeDelayed = undefined
+ioSignal    = undefined
 
 instance Functor Signal where
   fmap = undefined
@@ -46,6 +47,14 @@ instance Functor Signal where
 instance Applicative Signal where
   pure = undefined
   (<*>) = undefined
+
+
+
+rpcShownInterest :: Int -> IO Bool
+rpcShownInterest = undefined
+
+rpcRecentPopup :: Int -> IO Bool
+rpcRecentPopup = undefined
 
 
 
