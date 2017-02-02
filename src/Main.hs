@@ -2,16 +2,13 @@ module Main where
 
 
 
-runSignal   :: (Int -> Int) -> (Int -> Int) -> Signal w -> w
-
-
-tell :: w -> ReaderT r (WriterT w m) ()
 
 
 
 
+runM :: ReaderT r (WriterT w Maybe) a -> r -> Maybe (w, a)
 
-
+filter       :: (r -> Maybe (w, a)) -> Transform r (w, a)
 
 
 
@@ -34,13 +31,16 @@ tell :: w -> ReaderT r (WriterT w m) ()
 
 
 
-runSignal   = undefined
-
-
-tell        = undefined
 
 
 
+
+
+
+
+runM        = undefined
+
+filter      = undefined
 
 
 
