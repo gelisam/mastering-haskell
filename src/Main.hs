@@ -3,12 +3,11 @@ module Main where
 
 
 
---     ,----,                                    ,---,   
---   /        \                                /       \ 
---  |   Page   |   ----- recordPopup ----->   |  Popup  |
---  | Renderer |                              | Tracker |
---   \        /                                \       / 
---     '----'                                    '---'   
+--     ,--,                                      ,---,   
+--   /      \    ------- atomically ------>    /       \ 
+--  |   IO   |   ------- atomically ------>   |   STM   |
+--   \      /    ------- atomically ------>    \       / 
+--     '--'                                      '---'   
 
 
 
