@@ -15,12 +15,14 @@ import ListT
 
 
 example :: StateT String (ListT IO) [Int]
-example = do
-  xs <- replicateM 3 $ do x <- (return 0 <|> return 1)
-                          modify (++ show x)
-                          return x
-  modify (++ "|")
-  return xs
+example = do x1 <- (return 0 <|> return 1)
+             modify (++ show x1)
+             x2 <- (return 0 <|> return 1)
+             modify (++ show x2)
+             x3 <- (return 0 <|> return 1)
+             modify (++ show x3)
+             modify (++ "|")
+             return [x1,x2,x3]
 
 
 
