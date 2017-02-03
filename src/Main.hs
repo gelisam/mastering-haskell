@@ -6,7 +6,7 @@ module Main where
 --     ,----,                                    ,---,   
 --   /        \                                /       \ 
 --  |   Page   |   ----- recordPopup ----->   |  Popup  |
---  | Renderer |   ----- getLastPopup ---->   | Tracker |
+--  | Renderer |                              | Tracker |
 --   \        /                                \       / 
 --     '----'                                    '---'   
 
