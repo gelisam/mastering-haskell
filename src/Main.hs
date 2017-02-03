@@ -1,50 +1,47 @@
 module Main where
-import Control.Monad.IO.Class
+import Control.Applicative
+import Control.Monad
 import Control.Monad.Trans.Class
-import Control.Monad.Trans.Either
-import Control.Monad.Trans.Reader
+import Control.Monad.Trans.State
+import ListT
 
-type STM = ReaderT TransactionId  --  type STM = ReaderT Transaction
-         ( EitherT Abort          --           ( EitherT Abort
-         ( IO ))                  --           ( WriterT Log
-                                  --           ( IO )))
+type M s = ListT
+         ( StateT s
+         ( IO ))
 
-rpcAskSTM :: STM Transaction
-rpcAskSTM = do transactionId <- ask
-               liftIO $ rpc host port "askSTM" transactionId
+runM :: M s a -> s -> IO ([a], s)
+runM mx s0 = ($ s0) $ runStateT
+           $ runListT
+           $ mx
 
-abortSTM :: Abort -> STM ()
-abortSTM e = lift $ left e
-
-rpcTellSTM :: Log -> STM ()
-rpcTellSTM lg = liftIO $ rpc host port "tellSTM" lg
-
-
-
-
-
-
-host :: String
-host = undefined
-
-port :: Int
-port = undefined
-
-rpc :: String -> Int -> String -> a
-rpc = undefined
+example :: M String [Int]
+example = do
+  xs <- replicateM 3 $ do x <- (return 0 <|> return 1)
+                          lift $ modify (++ show x)
+                          return x
+  lift $ modify (++ "|")
+  return xs
 
 
 
-data TransactionId
-data Transaction
-data Log
-data Abort
 
-instance Monoid Log where
-  mempty  = undefined
-  mappend = undefined
+runListT :: Monad m => ListT m a -> m [a]
+runListT (ListT mxs) = do
+  xs <- mxs
+  case xs of
+    Nothing       -> return []
+    Just (x, xs') -> (x:) <$> runListT xs'
 
 
 
 main :: IO ()
-main = return ()
+main = do (x1:xs,trace) <- runM example []
+          putStr "( [ "
+          print x1
+          forM_ xs $ \x -> do
+            putStr "  , "
+            print x
+          putStrLn "  ]"
+          putStr ", "
+          print trace
+          putStrLn ")"
