@@ -6,16 +6,14 @@ module Main where
 
 
 
-runM :: ReaderT r (WriterT w Maybe) a -> r -> Maybe (w, a)
-
-filter       :: (r -> Maybe (w, a)) -> Transform r (w, a)
 
 
 
 
-
-
-
+runTransform :: Transform a (STM ())
+             -> IO a
+             -> (STM () -> IO ())
+             -> IO ()
 
 
 
@@ -23,7 +21,7 @@ filter       :: (r -> Maybe (w, a)) -> Transform r (w, a)
 
 
 
-
+atomically :: STM a -> IO a
 
 
 
@@ -38,14 +36,12 @@ filter       :: (r -> Maybe (w, a)) -> Transform r (w, a)
 
 
 
-runM        = undefined
-
-filter      = undefined
 
 
 
 
 
+runTransform = undefined
 
 
 
@@ -55,6 +51,9 @@ filter      = undefined
 
 
 
+
+
+atomically  = undefined
 
 
 data Behaviour   a
