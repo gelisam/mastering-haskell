@@ -1,30 +1,43 @@
 module Main where
+import Control.Applicative
 import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Trans.State
 import ListT
 
+type M = StateT StringId  --  type M s = StateT s
+       ( ListT            --           ( ListT
+       ( IO ))            --           ( IO ))
+
+appendStringM :: String -> M ()
+appendStringM s = do stringId <- get
+                     stringId' <- liftIO $ rpcAppend stringId s
+                     put stringId'
+
+example :: M ([Int], String)
+example = do xs <- replicateM 3 $ do x <- (return 0 <|> return 1)
+                                     appendStringM (show x)
+                                     return x
+             appendStringM "|"
+             finalId <- get
+             s <- liftIO $ rpcGetString finalId
+             return (xs, s)
 
 
 
+data StringId
+
+rpcAppend :: StringId -> String -> IO StringId
+rpcAppend = undefined
+
+rpcGetString :: StringId -> IO String
+rpcGetString = undefined
 
 
-
-
-
-
-
-
-
-example :: String -> IO [([Int], String)]
-example s0 = fmap concat . forM [0,1] $ \x1 -> do
-               let s1 = s0 ++ show x1
-               fmap concat . forM [0,1] $ \x2 -> do
-                 let s2 = s1 ++ show x2
-                 fmap concat . forM [0,1] $ \x3 -> do
-                   let s3 = s2 ++ show x3
-                   return [([x1,x2,x3], s3 ++ "|")]
-
-
-
+runM :: M a -> StringId -> IO [(a, StringId)]
+runM mx stringId0 = runListT
+                  $ ($ stringId0) $ runStateT
+                  $ mx
 
 runListT :: Monad m => ListT m a -> m [a]
 runListT (ListT mxs) = do
@@ -36,10 +49,4 @@ runListT (ListT mxs) = do
 
 
 main :: IO ()
-main = do x1:xs <- example []
-          putStr "[ "
-          print x1
-          forM_ xs $ \x -> do
-            putStr ", "
-            print x
-          putStrLn "]"
+main = return ()
