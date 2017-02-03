@@ -1,7 +1,6 @@
 module Main where
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.State
 import ListT
 
 
@@ -14,15 +13,15 @@ import ListT
 
 
 
-example :: StateT String (ListT IO) [Int]
-example = do x1 <- (return 0 <|> return 1)
-             modify (++ show x1)
-             x2 <- (return 0 <|> return 1)
-             modify (++ show x2)
-             x3 <- (return 0 <|> return 1)
-             modify (++ show x3)
-             modify (++ "|")
-             return [x1,x2,x3]
+
+example :: String -> ListT IO ([Int], String)
+example s0 = do x1 <- (return 0 <|> return 1)
+                let s1 = s0 ++ show x1
+                x2 <- (return 0 <|> return 1)
+                let s2 = s1 ++ show x2
+                x3 <- (return 0 <|> return 1)
+                let s3 = s2 ++ show x3
+                return ([x1,x2,x3], s3 ++ "|")
 
 
 
@@ -37,7 +36,7 @@ runListT (ListT mxs) = do
 
 
 main :: IO ()
-main = do x1:xs <- runListT $ ($ []) $ runStateT example
+main = do x1:xs <- runListT (example [])
           putStr "[ "
           print x1
           forM_ xs $ \x -> do
