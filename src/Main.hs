@@ -4,15 +4,15 @@ import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
 
 
-type STM = ReaderT Transaction  -- Transaction -> 
-         ( EitherT Abort        --     Either Abort
-         ( WriterT Log          --    (              , Log)
-         ( IO )))               -- IO               a
+type STM = ReaderT Transaction
+         ( WriterT Log    --  <---.
+         ( EitherT Abort  --  <---'
+         ( IO )))
 
-
-runSTM :: STM a -> Transaction -> IO (Either Abort a, Log)
-runSTM sx t = runWriterT
-            $ runEitherT
+--     :: STM a -> Transaction -> IO (Either Abort a, Log)
+runSTM :: STM a -> Transaction -> IO (Either Abort (a, Log))
+runSTM sx t = runEitherT  --  <---.
+            $ runWriterT  --  <---'
             $ ($ t) $ runReaderT
             $ sx
 
