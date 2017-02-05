@@ -1,17 +1,17 @@
+{-# LANGUAGE GADTs #-}
 module Main where
 import Network
 import System.IO
 
+data FreeAp f a where
+  Pure :: a -> FreeAp f a
+  Ap   :: FreeAp f (e -> a) -> f e -> FreeAp f a
+type Signal a = FreeAp SignalF a
 
-data MyObject = MyObject { field1 :: String
-                         , field2 :: Int
-                         }
-
-rpcMyMethod :: MyObject -> Int -> Int -> IO ()
-rpcMyMethod o x y = do
+rpcMyMethod :: Signal String -> Int -> Int -> IO ()
+rpcMyMethod s x y = do
   h <- connectTo host port
-  hPutStrLn h $ serialize $ field1 o
-  hPutStrLn h $ serialize $ field2 o
+  hPutStrLn h $ serialize s  -- (e -> a) is not Serializable :(
   hPutStrLn h $ serialize x
   hPutStrLn h $ serialize y
 
@@ -25,6 +25,10 @@ rpcMyMethod o x y = do
 
 
 
+data SignalF a where
+  VisitCount  :: SignalF Int
+  PopupCount  :: SignalF Int
+  TimeDelayed :: Int -> Signal a -> SignalF a
 
 
 
