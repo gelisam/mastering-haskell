@@ -1,35 +1,115 @@
 module Main where
-microservice :: A -> B -> IO ()
-microservice A1 B1 = undefined
-microservice A1 B2 = undefined
-microservice A2 B1 = undefined
-microservice A2 B2 = undefined
 
-monolith :: A -> B -> C -> D -> IO ()
-monolith A1 B1 C1 D1 = undefined
-monolith A1 B1 C1 D2 = undefined
-monolith A1 B1 C2 D1 = undefined
-monolith A1 B1 C2 D2 = undefined
-monolith A1 B2 C1 D1 = undefined
-monolith A1 B2 C1 D2 = undefined
-monolith A1 B2 C2 D1 = undefined
-monolith A1 B2 C2 D2 = undefined
-monolith A2 B1 C1 D1 = undefined
-monolith A2 B1 C1 D2 = undefined
-monolith A2 B1 C2 D1 = undefined
-monolith A2 B1 C2 D2 = undefined
-monolith A2 B2 C1 D1 = undefined
-monolith A2 B2 C1 D2 = undefined
-monolith A2 B2 C2 D1 = undefined
-monolith A2 B2 C2 D2 = undefined
+import Data.IORef
+
+
+registerCallbacks :: IO ()
+registerCallbacks = do
+  ref <- newIORef (1 :: Int)
+  
+  registerCallback nextPageE $ \() -> do
+    modifyIORef ref (+1)
+  
+  registerCallback prevPageE $ \() -> do
+    modifyIORef ref (subtract 1)
 
 
 
-data A = A1 | A2
-data B = B1 | B2
-data C = C1 | C2
-data D = D1 | D2
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+data Rect = Rect Coord Size
+
+is_inside :: Coord -> Rect -> Bool
+is_inside (Pos x y) (Rect (Pos x0 y0) (Size w h))
+    = x >= x0 && x < x0 + w
+   && y >= y0 && y < y0 + h
+
+buttonRect :: Rect
+buttonRect = Rect (Pos 200 200) (Size 80 30)
+
+nextButtonRect :: Rect
+nextButtonRect = Rect (Pos 400 300) (Size 80 30)
+
+
+
+
+
+
+
+data Event a
+data Behaviour a
+
+instance Functor Behaviour where
+  fmap _ _ = undefined
+
+instance Applicative Behaviour where
+  pure  = pureB
+  (<*>) = applyB
+
+
+neverE :: Event a
+neverE = undefined
+
+mergeE :: Event a -> Event a -> Event a
+mergeE = undefined
+
+
+pureB :: a -> Behaviour a
+pureB = undefined
+
+applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
+applyB = undefined
+
+
+mapFilterE :: (a -> Maybe b) -> Event a -> Event b
+mapFilterE = undefined
+
+
+registerCallback :: Event a -> (a -> IO ()) -> IO ()
+registerCallback = undefined
+
+
+
+type Label = String
+data Coord = Pos Int Int
+data Size = Size Int Int
+
+data ClickOcc = LeftClick Coord | RightClick Coord
+data KeyboardOcc = KeyDown Char | KeyUp Char
+data GUI = Button Label Size | Window [(Coord, GUI)]
+
+mousePositionB :: Behaviour Coord
+mousePositionB = undefined
+
+mouseClickE :: Event ClickOcc
+mouseClickE = undefined
+
+nextPageE :: Event ()
+nextPageE = mapFilterE f mouseClickE
+  where
+    f :: ClickOcc -> Maybe ()
+    f (LeftClick coord) | coord `is_inside` nextButtonRect
+                        = Just ()
+    f _                 = Nothing
+
+prevPageE :: Event ()
+prevPageE = undefined
 
 
 main :: IO ()
