@@ -2,14 +2,17 @@ module Main where
 import Network
 import System.IO
 
--- new API
--- is now :: S -> A -> IO S
-rpcInsert :: A -> S -> IO S
-rpcInsert a s = do
+
+data MyObject = MyObject { field1 :: String
+                         , field2 :: Int
+                         }
+
+rpcMyMethod :: MyObject -> Int -> Int -> IO ()
+rpcMyMethod o x y = do
   h <- connectTo host port
-  hPutStrLn h (serialize a)
-  hPutStrLn h (serialize s)
-  deserialize <$> hGetLine h
+  hPutStrLn h $ serialize o
+  hPutStrLn h $ serialize x
+  hPutStrLn h $ serialize y
 
 
 
@@ -36,16 +39,21 @@ class Serializable a where
   deserialize :: String -> a
 
 
-data A = A deriving (Show, Read)
-data S = S deriving (Show, Read)
-
-instance Serializable A where
+instance Serializable Bool where
   serialize   = show
   deserialize = read
 
-instance Serializable S where
+instance Serializable Int where
   serialize   = show
   deserialize = read
+
+instance (Show a, Read a) => Serializable [a] where
+  serialize   = show
+  deserialize = read
+
+instance Serializable MyObject where
+  serialize   = undefined
+  deserialize = undefined
 
 
 
