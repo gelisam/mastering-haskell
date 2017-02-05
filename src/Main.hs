@@ -1,27 +1,51 @@
-{-# LANGUAGE ExistentialQuantification #-}
 module Main where
-import Data.List (partition, sort)
+import Network
+import System.IO
 
-data SortingContainer a = forall s. SortingContainer
-  { empty  :: s
-  , insert :: s -> a -> s
-  , sorted :: s -> [a]
-  }
+-- new API
+-- is now :: S -> A -> IO S
+rpcInsert :: A -> S -> IO S
+rpcInsert a s = do
+  h <- connectTo host port
+  hPutStrLn h (serialize a)
+  hPutStrLn h (serialize s)
+  deserialize <$> hGetLine h
 
-progressiveImpl :: Ord a => SortingContainer a
-progressiveImpl = SortingContainer
-  { empty = []
-  , insert = \xs x -> let (xsLT, xsGEQ) = partition (< x) xs
-                       in xsLT ++ [x] ++ xsGEQ
-  , sorted = id
-  }
 
-justInTimeImpl :: Ord a => SortingContainer a
-justInTimeImpl = SortingContainer
-  { empty = []
-  , insert = flip (:)
-  , sorted = sort
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+host :: HostName
+host = "localhost"
+
+port :: PortID
+port = PortNumber 1234
+
+
+class Serializable a where
+  serialize   :: a -> String
+  deserialize :: String -> a
+
+
+data A = A deriving (Show, Read)
+data S = S deriving (Show, Read)
+
+instance Serializable A where
+  serialize   = show
+  deserialize = read
+
+instance Serializable S where
+  serialize   = show
+  deserialize = read
 
 
 
