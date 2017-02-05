@@ -10,7 +10,8 @@ data MyObject = MyObject { field1 :: String
 rpcMyMethod :: MyObject -> Int -> Int -> IO ()
 rpcMyMethod o x y = do
   h <- connectTo host port
-  hPutStrLn h $ serialize o
+  hPutStrLn h $ serialize $ field1 o
+  hPutStrLn h $ serialize $ field2 o
   hPutStrLn h $ serialize x
   hPutStrLn h $ serialize y
 
@@ -50,10 +51,6 @@ instance Serializable Int where
 instance (Show a, Read a) => Serializable [a] where
   serialize   = show
   deserialize = read
-
-instance Serializable MyObject where
-  serialize   = undefined
-  deserialize = undefined
 
 
 
