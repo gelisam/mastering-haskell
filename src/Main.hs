@@ -3,15 +3,21 @@ module Main where
 import Network
 import System.IO
 
-data FreeAp f a where
-  Pure :: a -> FreeAp f a
-  Ap   :: FreeAp f (e -> a) -> f e -> FreeAp f a
-type Signal a = FreeAp SignalF a
 
-rpcMyMethod :: Signal String -> Int -> Int -> IO ()
-rpcMyMethod s x y = do
+
+
+
+
+rpcMyMethod :: Either String Int -> Int -> Int -> IO ()
+rpcMyMethod e x y = do
   h <- connectTo host port
-  hPutStrLn h $ serialize s  -- (e -> a) is not Serializable :(
+  case e of
+    Left  s -> do hPutStrLn h $ serialize False
+                  hPutStrLn h $ serialize s
+                  hPutStrLn h $ serialize (0 :: Int)
+    Right i -> do hPutStrLn h $ serialize True
+                  hPutStrLn h $ serialize ""
+                  hPutStrLn h $ serialize i
   hPutStrLn h $ serialize x
   hPutStrLn h $ serialize y
 
@@ -22,13 +28,6 @@ rpcMyMethod s x y = do
 
 
 
-
-
-
-data SignalF a where
-  VisitCount  :: SignalF Int
-  PopupCount  :: SignalF Int
-  TimeDelayed :: Int -> Signal a -> SignalF a
 
 
 
@@ -55,7 +54,6 @@ instance Serializable Int where
 instance (Show a, Read a) => Serializable [a] where
   serialize   = show
   deserialize = read
-
 
 
 main :: IO ()
