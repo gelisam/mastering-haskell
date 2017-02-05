@@ -1,119 +1,28 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module Main where
+import Data.List (partition, sort)
 
+data SortingContainer a = forall s. SortingContainer
+  { empty  :: s
+  , insert :: a -> s -> s
+  , sorted :: s -> [a]
+  }
 
+progressiveImpl :: Ord a => SortingContainer a
+progressiveImpl = SortingContainer
+  { empty = []
+  , insert = \x xs -> let (xsLT, xsGEQ) = partition (< x) xs
+                       in xsLT ++ [x] ++ xsGEQ
+  , sorted = id
+  }
 
+justInTimeImpl :: Ord a => SortingContainer a
+justInTimeImpl = SortingContainer
+  { empty = []
+  , insert = (:)
+  , sorted = sort
+  }
 
-goToPageE :: Event Int
-goToPageE = scanE (\page delta -> page + delta)
-                  1
-                  ( fmap (\() ->  1) nextPageE
-           `mergeE` fmap (\() -> -1) prevPageE
-                  )
-
-currentPageB :: Behaviour Int
-currentPageB = holdB 1 goToPageE
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-data Rect = Rect Coord Size
-
-is_inside :: Coord -> Rect -> Bool
-is_inside (Pos x y) (Rect (Pos x0 y0) (Size w h))
-    = x >= x0 && x < x0 + w
-   && y >= y0 && y < y0 + h
-
-buttonRect :: Rect
-buttonRect = Rect (Pos 200 200) (Size 80 30)
-
-nextButtonRect :: Rect
-nextButtonRect = Rect (Pos 400 300) (Size 80 30)
-
-
-
-
-
-
-
-data Event a
-data Behaviour a
-
-instance Functor Event where
-  fmap _ _ = undefined
-
-instance Functor Behaviour where
-  fmap _ _ = undefined
-
-instance Applicative Behaviour where
-  pure  = pureB
-  (<*>) = applyB
-
-
-neverE :: Event a
-neverE = undefined
-
-mergeE :: Event a -> Event a -> Event a
-mergeE = undefined
-
-
-pureB :: a -> Behaviour a
-pureB = undefined
-
-applyB :: Behaviour (a -> b) -> Behaviour a -> Behaviour b
-applyB = undefined
-
-
-mapFilterE :: (a -> Maybe b) -> Event a -> Event b
-mapFilterE = undefined
-
-scanE :: (a -> b -> a) -> a -> Event b -> Event a
-scanE = undefined
-
-holdB :: a -> Event a -> Behaviour a
-holdB = undefined
-
-
-type Label = String
-data Coord = Pos Int Int
-data Size = Size Int Int
-
-data ClickOcc = LeftClick Coord | RightClick Coord
-data KeyboardOcc = KeyDown Char | KeyUp Char
-data GUI = Button Label Size | Window [(Coord, GUI)]
-
-mousePositionB :: Behaviour Coord
-mousePositionB = undefined
-
-mouseClickE :: Event ClickOcc
-mouseClickE = undefined
-
-nextPageE :: Event ()
-nextPageE = mapFilterE f mouseClickE
-  where
-    f :: ClickOcc -> Maybe ()
-    f (LeftClick coord) | coord `is_inside` nextButtonRect
-                        = Just ()
-    f _                 = Nothing
-
-prevPageE :: Event ()
-prevPageE = undefined
 
 
 main :: IO ()
