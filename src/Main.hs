@@ -6,14 +6,14 @@ process1 :: IO ()
 archive1 :: IO ()
 
 -- machine 2
-acquire2 :: IO ()
 process2 :: IO ()
-archive2 :: IO ()
+process3 :: IO ()
+process4 :: IO ()
 
 -- machine 3
-acquire3 :: IO ()
-process3 :: IO ()
-archive3 :: IO ()
+process5 :: IO ()
+process6 :: IO ()
+process7 :: IO ()
 
 
 
@@ -28,13 +28,13 @@ acquire1 = undefined
 process1 = undefined
 archive1 = undefined
 
-acquire2 = undefined
 process2 = undefined
-archive2 = undefined
-
-acquire3 = undefined
 process3 = undefined
-archive3 = undefined
+process4 = undefined
+
+process5 = undefined
+process6 = undefined
+process7 = undefined
 
 
 
