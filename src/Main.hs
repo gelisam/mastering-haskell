@@ -1,18 +1,18 @@
 {-# LANGUAGE GADTs, MultiParamTypeClasses, OverloadedStrings, TypeFamilies #-}
 module Main where
+import Control.Concurrent.Async
 import Data.Hashable
 import Haxl.Core
 
-
 instance DataSource () Req where
-  fetch _ _ _ reqs = SyncFetch $ do
-    forM_ reqs $ \(BlockedFetch req var) -> do
+  fetch _ _ _ reqs = AsyncFetch $ \fetchRest -> do
+    xs <- forM reqs $ \(BlockedFetch req var) -> async $ do
       r <- runRequest req
       putSuccess var r
-
-
-
-
+    
+    fetchRest
+    
+    mapM_ wait xs
 
 
 
@@ -120,8 +120,8 @@ instance Applicative (FreeAp f) where
 
 
 
-forM_ :: [a] -> (a -> IO ()) -> IO ()
-forM_ = flip mapM_
+forM :: [a] -> (a -> IO b) -> IO [b]
+forM = flip mapM
 
 
 
