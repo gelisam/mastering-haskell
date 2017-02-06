@@ -5,18 +5,18 @@ import Haxl.Core
 
 haxlComputation :: GenHaxl () Bool
 haxlComputation = do
-  r <- or <$> sequence [ dataFetch (PopupRequest 1)
-                       , dataFetch (PopupRequest 2)
-                       , dataFetch (PopupRequest 3)
-                       ]
-  if r then and <$> sequence [ dataFetch (PopupRequest 10)
-                             , dataFetch (PopupRequest 20)
-                             , dataFetch (PopupRequest 30)
-                             ]
-       else and <$> sequence [ dataFetch (PopupRequest 100)
-                             , dataFetch (PopupRequest 200)
-                             , dataFetch (PopupRequest 300)
-                             ]
+  x1 <- dataFetch (PopupRequest 1)
+  x2 <- dataFetch (PopupRequest 2)
+  x3 <- dataFetch (PopupRequest 3)
+  let r = or [x1,x2,x3]
+  if r then do y1 <- dataFetch (PopupRequest 10)
+               y2 <- dataFetch (PopupRequest 20)
+               y3 <- dataFetch (PopupRequest 30)
+               return $ and [y1,y2,y3]
+       else do z1 <- dataFetch (PopupRequest 100)
+               z2 <- dataFetch (PopupRequest 200)
+               z3 <- dataFetch (PopupRequest 300)
+               return $ and [z1,z2,z3]
 
 
 
