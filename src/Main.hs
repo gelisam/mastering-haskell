@@ -4,23 +4,21 @@ import Data.Hashable
 import Haxl.Core
 
 haxlComputation :: GenHaxl () Bool
-haxlComputation =
-  bool <$> (or <$> sequence [ dataFetch (PopupRequest 1)
-                            , dataFetch (PopupRequest 2)
-                            , dataFetch (PopupRequest 3)
-                            ])
-       <*> (and <$> sequence [ dataFetch (PopupRequest 10)
+haxlComputation = do
+  r <- or <$> sequence [ dataFetch (PopupRequest 1)
+                       , dataFetch (PopupRequest 2)
+                       , dataFetch (PopupRequest 3)
+                       ]
+  if r then and <$> sequence [ dataFetch (PopupRequest 10)
                              , dataFetch (PopupRequest 20)
                              , dataFetch (PopupRequest 30)
-                             ])
-       <*> (and <$> sequence [ dataFetch (PopupRequest 100)
+                             ]
+       else and <$> sequence [ dataFetch (PopupRequest 100)
                              , dataFetch (PopupRequest 200)
                              , dataFetch (PopupRequest 300)
-                             ])
+                             ]
 
-bool :: Bool -> a -> a -> a
-bool True  t _ = t
-bool False _ f = f
+
 
 
 
