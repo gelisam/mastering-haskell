@@ -1,21 +1,21 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, OverloadedStrings, TypeFamilies #-}
 module Main where
+import Data.Hashable
 import Haxl.Core
 
-data Req a where
-  VisitRequest :: Int -> Req Int
-  PopupRequest :: Int -> Req Bool
+instance DataSourceName Req where
+  dataSourceName _ = "Req"
 
---         :: Req   -> IO (Either Int Bool)
-runRequest :: Req a -> IO a
-runRequest (VisitRequest days) = delayedVisitCount days
-runRequest (PopupRequest days) = hasDisplayedPopup days
+instance StateKey Req where
+  data State Req = NoState
 
+instance Show1 Req where
+  show1 (VisitRequest n) = "VisitRequest " ++ show n
+  show1 (PopupRequest n) = "PopupRequest " ++ show n
 
-
-
-
-
+instance Hashable (Req a) where
+  hashWithSalt salt (VisitRequest n) = hashWithSalt salt (False, n)
+  hashWithSalt salt (PopupRequest n) = hashWithSalt salt (True, n)
 
 
 
@@ -31,6 +31,26 @@ delayedVisitCount days = do
 hasDisplayedPopup days = do
   putStrLn $ "hasDisplayedPopup " ++ show days
   return False
+
+
+
+instance Show (Req a) where
+  show (VisitRequest n) = "VisitRequest " ++ show n
+  show (PopupRequest n) = "PopupRequest " ++ show n
+
+instance Eq (Req a) where
+  VisitRequest n == VisitRequest m = n == m
+  PopupRequest n == PopupRequest m = n == m
+
+
+
+data Req a where
+  VisitRequest :: Int -> Req Int
+  PopupRequest :: Int -> Req Bool
+
+runRequest :: Req a -> IO a
+runRequest (VisitRequest days) = delayedVisitCount days
+runRequest (PopupRequest days) = hasDisplayedPopup days
 
 
 
@@ -73,6 +93,4 @@ instance Applicative (FreeAp f) where
 
 
 main :: IO ()
-main = do
-  _ <- newResult ()  -- avoid a warning about unused Haxl.Core import
-  return ()
+main = return ()
