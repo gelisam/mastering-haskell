@@ -5,8 +5,8 @@ import Haxl.Core
 
 haxlComputation :: GenHaxl () Bool
 haxlComputation = do
-  x1 <- dataFetch (PopupRequest 1)
-  x2 <- dataFetch (PopupRequest 2)
+  x1 <- dataFetch (PopupRequest 1)  -- Req1 >>= (x1 ->
+  x2 <- dataFetch (PopupRequest 2)  --                 Req2 ...)
   x3 <- dataFetch (PopupRequest 3)
   let r = or [x1,x2,x3]
   if r then do y1 <- dataFetch (PopupRequest 10)
