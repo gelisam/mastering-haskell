@@ -1,23 +1,23 @@
 {-# LANGUAGE GADTs #-}
 module Main where
+import Data.Set as Set
 
-nDaysCount :: Int -> Signal Int
-nDaysCount days = (-) <$> visitCount <*> timeDelayed days visitCount
+data Req
+  = VisitRequest Int
+  | PopupRequest Int
+  deriving (Eq, Ord, Show)
 
-veryActiveWeek :: Signal Bool
-veryActiveWeek = (>) <$> nDaysCount 7
-                     <*> ((-) <$> nDaysCount 365 <*> nDaysCount 7)
 
-runSignal :: (Int -> IO Int) -> (Int -> IO Int) -> Signal a -> IO a
-runSignal delayedVisitCount delayedPopupCount = go 0
+requests :: Signal a -> [Req]
+requests = Set.toList . go 0
   where
-    go :: Int -> Signal a -> IO a
-    go _     (Pure x)   = return x
-    go delay (Ap cc sx) = go delay cc <*> goF delay sx
+    go :: Int -> Signal a -> Set Req
+    go _     (Pure _)   = Set.empty
+    go delay (Ap cc sx) = Set.union (go delay cc) (goF delay sx)
     
-    goF :: Int -> SignalF a -> IO a
-    goF delay VisitCount         = delayedVisitCount delay
-    goF delay PopupCount         = delayedPopupCount delay
+    goF :: Int -> SignalF a -> Set Req
+    goF delay VisitCount         = Set.singleton (VisitRequest delay)
+    goF delay PopupCount         = Set.singleton (PopupRequest delay)
     goF delay (TimeDelayed d sx) = go (delay + d) sx
 
 
@@ -25,15 +25,12 @@ runSignal delayedVisitCount delayedPopupCount = go 0
 
 
 
-verboseDelayedVisitCount :: Int -> IO Int
-verboseDelayedVisitCount x = do
-  putStrLn $ "timeDelayed " ++ show x ++ " visitCount"
-  return 0
+nDaysCount :: Int -> Signal Int
+nDaysCount days = (-) <$> visitCount <*> timeDelayed days visitCount
 
-verboseDelayedPopupCount :: Int -> IO Int
-verboseDelayedPopupCount x = do
-  putStrLn $ "timeDelayed " ++ show x ++ " popupCount"
-  return 0
+veryActiveWeek :: Signal Bool
+veryActiveWeek = (>) <$> nDaysCount 7
+                     <*> ((-) <$> nDaysCount 365 <*> nDaysCount 7)
 
 
 
@@ -70,8 +67,4 @@ instance Applicative (FreeAp f) where
 
 
 main :: IO ()
-main = do
-  _ <- runSignal verboseDelayedVisitCount
-                 verboseDelayedPopupCount
-                 veryActiveWeek
-  return ()
+main = print $ requests veryActiveWeek
