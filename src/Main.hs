@@ -1,27 +1,35 @@
 {-# LANGUAGE GADTs #-}
 module Main where
-import Data.Set as Set
+import Data.Map as Map
 
 data Req
   = VisitRequest Int
   | PopupRequest Int
   deriving (Eq, Ord, Show)
+type Response = Int
 
+runRequest :: Req -> IO Response
+runRequest (VisitRequest days) = delayedVisitCount days
+runRequest (PopupRequest days) = delayedPopupCount days
 
-requests :: Signal a -> [Req]
-requests = Set.toList . go 0
+cacheRequests :: [Req] -> IO (Map Req Response)
+cacheRequests rs = Map.fromList <$> mapM go rs
   where
-    go :: Int -> Signal a -> Set Req
-    go _     (Pure _)   = Set.empty
-    go delay (Ap cc sx) = Set.union (go delay cc) (goF delay sx)
-    
-    goF :: Int -> SignalF a -> Set Req
-    goF delay VisitCount         = Set.singleton (VisitRequest delay)
-    goF delay PopupCount         = Set.singleton (PopupRequest delay)
-    goF delay (TimeDelayed d sx) = go (delay + d) sx
+    go :: Req -> IO (Req, Response)
+    go r = do x <- runRequest r
+              return (r, x)
+
+delayedVisitCount :: Int -> IO Int
+delayedPopupCount :: Int -> IO Int
 
 
+delayedVisitCount days = do
+  putStrLn $ "delayedVisitCount " ++ show days
+  return 0
 
+delayedPopupCount days = do
+  putStrLn $ "delayedPopupCount " ++ show days
+  return 0
 
 
 
@@ -31,6 +39,20 @@ nDaysCount days = (-) <$> visitCount <*> timeDelayed days visitCount
 veryActiveWeek :: Signal Bool
 veryActiveWeek = (>) <$> nDaysCount 7
                      <*> ((-) <$> nDaysCount 365 <*> nDaysCount 7)
+
+
+
+requests :: Signal a -> [Req]
+requests = nub . go 0
+  where
+    go :: Int -> Signal a -> [Req]
+    go _     (Pure _)   = []
+    go delay (Ap cc sx) = go delay cc ++ goF delay sx
+    
+    goF :: Int -> SignalF a -> [Req]
+    goF delay VisitCount         = [VisitRequest delay]
+    goF delay PopupCount         = [PopupRequest delay]
+    goF delay (TimeDelayed d sx) = go (delay + d) sx
 
 
 
@@ -66,5 +88,11 @@ instance Applicative (FreeAp f) where
 
 
 
+nub :: Eq a => [a] -> [a]
+nub []     = []
+nub (x:xs) = x : nub (Prelude.filter (/= x) xs)
+
+
+
 main :: IO ()
-main = print $ requests veryActiveWeek
+main = return ()
