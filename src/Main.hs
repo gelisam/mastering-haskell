@@ -8,28 +8,21 @@ data Req
   deriving (Eq, Ord, Show)
 type Response = Either Int Bool
 
-runRequest :: Req -> IO Response
-runRequest (VisitRequest days) = Left  <$> delayedVisitCount days
-runRequest (PopupRequest days) = Right <$> hasDisplayedPopup days
-
-cacheRequests :: [Req] -> IO (Map Req Response)
-cacheRequests rs = Map.fromList <$> mapM go rs
+cachedSignal :: Map Req Response -> Signal a -> a
+cachedSignal c = go 0
   where
-    go :: Req -> IO (Req, Response)
-    go r = do x <- runRequest r
-              return (r, x)
+    go :: Int -> Signal a -> a
+    go _     (Pure x)   = x
+    go delay (Ap cc sx) = go delay cc $ goF delay sx
+    
+    goF :: Int -> SignalF a -> a
+    goF delay VisitCount         = fromLeft  (c ! VisitRequest delay)
+    goF delay HasDisplayedPopup  = fromRight (c ! PopupRequest delay)
+    goF delay (TimeDelayed d sx) = go (delay + d) sx
 
-delayedVisitCount :: Int -> IO Int
-hasDisplayedPopup :: Int -> IO Bool
-
-
-delayedVisitCount days = do
-  putStrLn $ "delayedVisitCount " ++ show days
-  return 0
-
-hasDisplayedPopup days = do
-  putStrLn $ "hasDisplayedPopup " ++ show days
-  return False
+runSignal :: Signal a -> IO a
+runSignal signal = do c <- cacheRequests (requests signal)
+                      return $ cachedSignal c signal
 
 
 
@@ -53,6 +46,29 @@ requests = nub . go 0
     goF delay VisitCount         = [VisitRequest delay]
     goF delay HasDisplayedPopup  = [PopupRequest delay]
     goF delay (TimeDelayed d sx) = go (delay + d) sx
+
+
+
+delayedVisitCount :: Int -> IO Int
+delayedVisitCount days = do
+  putStrLn $ "delayedVisitCount " ++ show days
+  return 0
+
+hasDisplayedPopup :: Int -> IO Bool
+hasDisplayedPopup days = do
+  putStrLn $ "hasDisplayedPopup " ++ show days
+  return False
+
+runRequest :: Req -> IO Response
+runRequest (VisitRequest days) = Left  <$> delayedVisitCount days
+runRequest (PopupRequest days) = Right <$> hasDisplayedPopup days
+
+cacheRequests :: [Req] -> IO (Map Req Response)
+cacheRequests rs = Map.fromList <$> mapM go rs
+  where
+    go :: Req -> IO (Req, Response)
+    go r = do x <- runRequest r
+              return (r, x)
 
 
 
@@ -90,6 +106,17 @@ nub []     = []
 nub (x:xs) = x : nub (Prelude.filter (/= x) xs)
 
 
+fromLeft :: Either a b -> a
+fromLeft (Left  x) = x
+fromLeft (Right _) = error "fromLeft (Right ...)"
+
+fromRight :: Either a b -> b
+fromRight (Left  _) = error "fromRight (Right ...)"
+fromRight (Right y) = y
+
+
 
 main :: IO ()
-main = return ()
+main = do
+  _ <- runSignal veryActiveWeek
+  return ()
