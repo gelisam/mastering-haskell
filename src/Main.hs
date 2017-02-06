@@ -1,24 +1,24 @@
-{-# LANGUAGE GADTs, OverloadedStrings, TypeFamilies #-}
+{-# LANGUAGE GADTs, MultiParamTypeClasses, OverloadedStrings, TypeFamilies #-}
 module Main where
 import Data.Hashable
 import Haxl.Core
 
-instance DataSourceName Req where
-  dataSourceName _ = "Req"
 
-instance StateKey Req where
-  data State Req = NoState
+instance Eq (Req a) where
+  VisitRequest n == VisitRequest m = n == m
+  PopupRequest n == PopupRequest m = n == m
 
-instance Show1 Req where
-  show1 (VisitRequest n) = "VisitRequest " ++ show n
-  show1 (PopupRequest n) = "PopupRequest " ++ show n
-
-instance Hashable (Req a) where
-  hashWithSalt salt (VisitRequest n) = hashWithSalt salt (False, n)
-  hashWithSalt salt (PopupRequest n) = hashWithSalt salt (True, n)
-
-
-
+haxlSignal :: Signal a -> GenHaxl () a
+haxlSignal = go 0
+  where
+    go :: Int -> Signal a -> GenHaxl () a
+    go _     (Pure x)   = return x
+    go delay (Ap cc sx) = go delay cc <*> goF delay sx
+    
+    goF :: Int -> SignalF a -> GenHaxl () a
+    goF delay VisitCount          = dataFetch (VisitRequest delay)
+    goF delay HasDisplayedPopup   = dataFetch (PopupRequest delay)
+    goF delay (TimeDelayed d sx)  = go (delay + d) sx
 
 delayedVisitCount :: Int -> IO Int
 hasDisplayedPopup :: Int -> IO Bool
@@ -34,19 +34,35 @@ hasDisplayedPopup days = do
 
 
 
+data Req a where
+  VisitRequest :: Int -> Req Int
+  PopupRequest :: Int -> Req Bool
+
+
+instance DataSource () Req where
+  fetch _ _ _ reqs = SyncFetch $ do
+    forM_ reqs $ \(BlockedFetch req var) -> do
+      r <- runRequest req
+      putSuccess var r
+
+instance DataSourceName Req where
+  dataSourceName _ = "Req"
+
+instance StateKey Req where
+  data State Req = NoState
+
+instance Show1 Req where
+  show1 (VisitRequest n) = "VisitRequest " ++ show n
+  show1 (PopupRequest n) = "PopupRequest " ++ show n
+
 instance Show (Req a) where
   show (VisitRequest n) = "VisitRequest " ++ show n
   show (PopupRequest n) = "PopupRequest " ++ show n
 
-instance Eq (Req a) where
-  VisitRequest n == VisitRequest m = n == m
-  PopupRequest n == PopupRequest m = n == m
+instance Hashable (Req a) where
+  hashWithSalt salt (VisitRequest n) = hashWithSalt salt (False, n)
+  hashWithSalt salt (PopupRequest n) = hashWithSalt salt (True, n)
 
-
-
-data Req a where
-  VisitRequest :: Int -> Req Int
-  PopupRequest :: Int -> Req Bool
 
 runRequest :: Req a -> IO a
 runRequest (VisitRequest days) = delayedVisitCount days
@@ -92,5 +108,16 @@ instance Applicative (FreeAp f) where
 
 
 
+forM_ :: [a] -> (a -> IO ()) -> IO ()
+forM_ = flip mapM_
+
+
+
+initialState :: StateStore
+initialState = stateSet NoState stateEmpty
+
 main :: IO ()
-main = return ()
+main = do
+  myEnv <- initEnv initialState ()
+  _ <- runHaxl myEnv (haxlSignal veryActiveWeek)
+  return ()
