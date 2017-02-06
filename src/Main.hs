@@ -1,28 +1,36 @@
 {-# LANGUAGE GADTs #-}
 module Main where
-import Data.Map as Map
+import Haxl.Core
 
-data Req
-  = VisitRequest Int
-  | PopupRequest Int
-  deriving (Eq, Ord, Show)
-type Response = Either Int Bool
+data Req a where
+  VisitRequest :: Int -> Req Int
+  PopupRequest :: Int -> Req Bool
 
-cachedSignal :: Map Req Response -> Signal a -> a
-cachedSignal c = go 0
-  where
-    go :: Int -> Signal a -> a
-    go _     (Pure x)   = x
-    go delay (Ap cc sx) = go delay cc $ goF delay sx
-    
-    goF :: Int -> SignalF a -> a
-    goF delay VisitCount         = fromLeft  (c ! VisitRequest delay)
-    goF delay HasDisplayedPopup  = fromRight (c ! PopupRequest delay)
-    goF delay (TimeDelayed d sx) = go (delay + d) sx
+--         :: Req   -> IO (Either Int Bool)
+runRequest :: Req a -> IO a
+runRequest (VisitRequest days) = delayedVisitCount days
+runRequest (PopupRequest days) = hasDisplayedPopup days
 
-runSignal :: Signal a -> IO a
-runSignal signal = do c <- cacheRequests (requests signal)
-                      return $ cachedSignal c signal
+
+
+
+
+
+
+
+
+
+delayedVisitCount :: Int -> IO Int
+hasDisplayedPopup :: Int -> IO Bool
+
+
+delayedVisitCount days = do
+  putStrLn $ "delayedVisitCount " ++ show days
+  return 0
+
+hasDisplayedPopup days = do
+  putStrLn $ "hasDisplayedPopup " ++ show days
+  return False
 
 
 
@@ -32,43 +40,6 @@ nDaysCount days = (-) <$> visitCount <*> timeDelayed days visitCount
 veryActiveWeek :: Signal Bool
 veryActiveWeek = (>) <$> nDaysCount 7
                      <*> ((-) <$> nDaysCount 365 <*> nDaysCount 7)
-
-
-
-requests :: Signal a -> [Req]
-requests = nub . go 0
-  where
-    go :: Int -> Signal a -> [Req]
-    go _     (Pure _)   = []
-    go delay (Ap cc sx) = go delay cc ++ goF delay sx
-    
-    goF :: Int -> SignalF a -> [Req]
-    goF delay VisitCount         = [VisitRequest delay]
-    goF delay HasDisplayedPopup  = [PopupRequest delay]
-    goF delay (TimeDelayed d sx) = go (delay + d) sx
-
-
-
-delayedVisitCount :: Int -> IO Int
-delayedVisitCount days = do
-  putStrLn $ "delayedVisitCount " ++ show days
-  return 0
-
-hasDisplayedPopup :: Int -> IO Bool
-hasDisplayedPopup days = do
-  putStrLn $ "hasDisplayedPopup " ++ show days
-  return False
-
-runRequest :: Req -> IO Response
-runRequest (VisitRequest days) = Left  <$> delayedVisitCount days
-runRequest (PopupRequest days) = Right <$> hasDisplayedPopup days
-
-cacheRequests :: [Req] -> IO (Map Req Response)
-cacheRequests rs = Map.fromList <$> mapM go rs
-  where
-    go :: Req -> IO (Req, Response)
-    go r = do x <- runRequest r
-              return (r, x)
 
 
 
@@ -101,22 +72,7 @@ instance Applicative (FreeAp f) where
 
 
 
-nub :: Eq a => [a] -> [a]
-nub []     = []
-nub (x:xs) = x : nub (Prelude.filter (/= x) xs)
-
-
-fromLeft :: Either a b -> a
-fromLeft (Left  x) = x
-fromLeft (Right _) = error "fromLeft (Right ...)"
-
-fromRight :: Either a b -> b
-fromRight (Left  _) = error "fromRight (Right ...)"
-fromRight (Right y) = y
-
-
-
 main :: IO ()
 main = do
-  _ <- runSignal veryActiveWeek
+  _ <- newResult ()  -- avoid a warning about unused Haxl.Core import
   return ()
