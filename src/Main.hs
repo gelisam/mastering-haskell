@@ -6,11 +6,11 @@ data Req
   = VisitRequest Int
   | PopupRequest Int
   deriving (Eq, Ord, Show)
-type Response = Int
+type Response = Either Int Bool
 
 runRequest :: Req -> IO Response
-runRequest (VisitRequest days) = delayedVisitCount days
-runRequest (PopupRequest days) = delayedPopupCount days
+runRequest (VisitRequest days) = Left  <$> delayedVisitCount days
+runRequest (PopupRequest days) = Right <$> hasDisplayedPopup days
 
 cacheRequests :: [Req] -> IO (Map Req Response)
 cacheRequests rs = Map.fromList <$> mapM go rs
@@ -20,16 +20,16 @@ cacheRequests rs = Map.fromList <$> mapM go rs
               return (r, x)
 
 delayedVisitCount :: Int -> IO Int
-delayedPopupCount :: Int -> IO Int
+hasDisplayedPopup :: Int -> IO Bool
 
 
 delayedVisitCount days = do
   putStrLn $ "delayedVisitCount " ++ show days
   return 0
 
-delayedPopupCount days = do
-  putStrLn $ "delayedPopupCount " ++ show days
-  return 0
+hasDisplayedPopup days = do
+  putStrLn $ "hasDisplayedPopup " ++ show days
+  return False
 
 
 
@@ -51,7 +51,7 @@ requests = nub . go 0
     
     goF :: Int -> SignalF a -> [Req]
     goF delay VisitCount         = [VisitRequest delay]
-    goF delay PopupCount         = [PopupRequest delay]
+    goF delay HasDisplayedPopup  = [PopupRequest delay]
     goF delay (TimeDelayed d sx) = go (delay + d) sx
 
 
@@ -63,15 +63,12 @@ data FreeAp f a where
 
 type Signal a = FreeAp SignalF a
 data SignalF a where
-  VisitCount  :: SignalF Int
-  PopupCount  :: SignalF Int
-  TimeDelayed :: Int -> Signal a -> SignalF a
+  VisitCount        :: SignalF Int
+  HasDisplayedPopup :: SignalF Bool
+  TimeDelayed       :: Int -> Signal a -> SignalF a
 
 visitCount :: Signal Int
 visitCount = Ap (Pure id) VisitCount
-
-popupCount :: Signal Int
-popupCount = Ap (Pure id) PopupCount
 
 timeDelayed :: Int -> Signal a -> Signal a
 timeDelayed days bx = Ap (Pure id) (TimeDelayed days bx)
