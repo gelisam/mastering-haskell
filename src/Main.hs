@@ -1,27 +1,28 @@
 {-# LANGUAGE GADTs, MultiParamTypeClasses, OverloadedStrings, TypeFamilies #-}
 module Main where
-import Control.Concurrent.Async
 import Data.Hashable
 import Haxl.Core
 
+
 instance DataSource () Req where
-  fetch _ _ _ reqs = AsyncFetch $ \fetchRest -> do
-    xs <- forM reqs $ \(BlockedFetch req var) -> async $ do
-      r <- runRequest req
-      putSuccess var r
-    
-    fetchRest
-    
-    mapM_ wait xs
-
-
-
-
+  fetch _ _ _ reqs = SyncFetch $ do
+      popupDays <- filterPopupDays (concatMap popupDay reqs)
+      forM_ reqs $ \(BlockedFetch req var) -> do
+        case req of
+          VisitRequest days -> do r <- delayedVisitCount days
+                                  putSuccess var r
+          PopupRequest days -> do let r = days `elem` popupDays
+                                  putSuccess var r
+    where
+      popupDay :: BlockedFetch Req -> [Int]
+      popupDay (BlockedFetch (PopupRequest day) _) = [day]
+      popupDay _                                   = []
 
 
 
 delayedVisitCount :: Int -> IO Int
 hasDisplayedPopup :: Int -> IO Bool
+filterPopupDays   :: [Int] -> IO [Int]
 
 
 delayedVisitCount days = do
@@ -31,6 +32,10 @@ delayedVisitCount days = do
 hasDisplayedPopup days = do
   putStrLn $ "hasDisplayedPopup " ++ show days
   return False
+
+filterPopupDays days = do
+  putStrLn $ "filterPopupDays " ++ show days
+  return []
 
 
 
@@ -120,8 +125,8 @@ instance Applicative (FreeAp f) where
 
 
 
-forM :: [a] -> (a -> IO b) -> IO [b]
-forM = flip mapM
+forM_ :: [a] -> (a -> IO ()) -> IO ()
+forM_ = flip mapM_
 
 
 
