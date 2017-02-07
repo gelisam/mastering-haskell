@@ -7,18 +7,18 @@ type Log = Map User [UTCTime]
 
 
 
-
-delayedCount :: User -> UTCTime -> Log -> Int -> Int
-delayedCount u (UTCTime today time) lg days =
-    length $ takeWhile (<= t0) $ M.findWithDefault [] u lg
+--           :: User -> UTCTime -> Log -> Int -> Int
+delayedCount :: UTCTime -> [UTCTime] -> Int -> Int
+delayedCount (UTCTime today time) ts days =
+    length $ takeWhile (<= t0) ts
   where
     t0 = UTCTime (addDays (-fromIntegral days) today) time
 
 delayedVisitCount :: User -> UTCTime -> IO (Int -> Int)
-delayedVisitCount u t = delayedCount u t <$> rpcReadVisitLog
+delayedVisitCount u t = delayedCount t <$> rpcReadUserVisitLog u
 
-rpcReadVisitLog :: IO Log
-rpcReadVisitLog = rpc host port "readVisitLog"
+rpcReadUserVisitLog :: User -> IO [UTCTime]
+rpcReadUserVisitLog = rpc host port "readUserVisitLog"
 
 
 
