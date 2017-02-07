@@ -1,24 +1,24 @@
 module Main where
-import Data.Map as M
 import Data.Time
 
 
-type Log = Map User [UTCTime]
 
 
 
---           :: User -> UTCTime -> Log -> Int -> Int
-delayedCount :: UTCTime -> [UTCTime] -> Int -> Int
-delayedCount (UTCTime today time) ts days =
-    length $ takeWhile (<= t0) ts
-  where
-    t0 = UTCTime (addDays (-fromIntegral days) today) time
+
+
+
+
+
+
+
+
 
 delayedVisitCount :: User -> UTCTime -> IO (Int -> Int)
-delayedVisitCount u t = delayedCount t <$> rpcReadUserVisitLog u
+delayedVisitCount = undefined
 
-rpcReadUserVisitLog :: User -> IO [UTCTime]
-rpcReadUserVisitLog = rpc host port "readUserVisitLog"
+rpcDelayedVisitCount :: User -> UTCTime -> Int -> IO Int
+rpcDelayedVisitCount = rpc host port "delayedVisitCount"
 
 
 
@@ -110,9 +110,6 @@ instance NFData a => NFData [a] where
 
 instance (NFData a1, NFData a2) => NFData (a1, a2) where
   deepseq (x1, x2) y = x1 `deepseq` x2 `deepseq` y
-
-instance (NFData k, NFData a) => NFData (Map k a) where
-  deepseq x y = M.toList x `deepseq` y
 
 
 
