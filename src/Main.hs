@@ -3,8 +3,8 @@ module Main where
 import Data.Hashable
 import Haxl.Core
 
-
 instance Eq (Req a) where
+  VisitRequest 0 == VisitRequest 0 = False
   VisitRequest n == VisitRequest m = n == m
   PopupRequest n == PopupRequest m = n == m
 
