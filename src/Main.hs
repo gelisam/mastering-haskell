@@ -3,22 +3,22 @@ module Main where
 import Data.Hashable
 import Haxl.Core
 
-instance Eq (Req a) where
-  VisitRequest 0 == VisitRequest 0 = False
-  VisitRequest n == VisitRequest m = n == m
-  PopupRequest n == PopupRequest m = n == m
 
-haxlSignal :: Signal a -> GenHaxl () a
-haxlSignal = go 0
-  where
-    go :: Int -> Signal a -> GenHaxl () a
-    go _     (Pure x)   = return x
-    go delay (Ap cc sx) = go delay cc <*> goF delay sx
-    
-    goF :: Int -> SignalF a -> GenHaxl () a
-    goF delay VisitCount          = dataFetch (VisitRequest delay)
-    goF delay HasDisplayedPopup   = dataFetch (PopupRequest delay)
-    goF delay (TimeDelayed d sx)  = go (delay + d) sx
+instance DataSource () Req where
+  fetch _ _ _ reqs = SyncFetch $ do
+    forM_ reqs $ \(BlockedFetch req var) -> do
+      r <- runRequest req
+      putSuccess var r
+
+
+
+
+
+
+
+
+
+
 
 delayedVisitCount :: Int -> IO Int
 hasDisplayedPopup :: Int -> IO Bool
@@ -34,16 +34,24 @@ hasDisplayedPopup days = do
 
 
 
+haxlSignal :: Signal a -> GenHaxl () a
+haxlSignal = go 0
+  where
+    go :: Int -> Signal a -> GenHaxl () a
+    go _     (Pure x)   = return x
+    go delay (Ap cc sx) = go delay cc <*> goF delay sx
+    
+    goF :: Int -> SignalF a -> GenHaxl () a
+    goF delay VisitCount          = dataFetch (VisitRequest delay)
+    goF delay HasDisplayedPopup   = dataFetch (PopupRequest delay)
+    goF delay (TimeDelayed d sx)  = go (delay + d) sx
+
+
+
 data Req a where
   VisitRequest :: Int -> Req Int
   PopupRequest :: Int -> Req Bool
 
-
-instance DataSource () Req where
-  fetch _ _ _ reqs = SyncFetch $ do
-    forM_ reqs $ \(BlockedFetch req var) -> do
-      r <- runRequest req
-      putSuccess var r
 
 instance DataSourceName Req where
   dataSourceName _ = "Req"
@@ -58,6 +66,10 @@ instance Show1 Req where
 instance Show (Req a) where
   show (VisitRequest n) = "VisitRequest " ++ show n
   show (PopupRequest n) = "PopupRequest " ++ show n
+
+instance Eq (Req a) where
+  VisitRequest n == VisitRequest m = n == m
+  PopupRequest n == PopupRequest m = n == m
 
 instance Hashable (Req a) where
   hashWithSalt salt (VisitRequest n) = hashWithSalt salt (False, n)
