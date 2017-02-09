@@ -1,30 +1,30 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE GADTs, LambdaCase #-}
 module Main where
 import Control.Concurrent.Async
 
 main :: IO ()
 main = do
-  r1 <- async $ rpcInParallel ["acquire", "process", "archive"]
-  r2 <- async $ rpcInParallel ["process", "process", "process"]
-  r3 <- async $ rpcInParallel ["process", "process", "process"]
+  r1 <- async $ rpcInParallel [Acquire, Process, Archive]
+  r2 <- async $ rpcInParallel [Process, Process, Process]
+  r3 <- async $ rpcInParallel [Process, Process, Process]
   mapM_ wait [r1,r2,r3]
 
+data Task where
+  Acquire :: Task
+  Process :: Task
+  Archive :: Task
 
-rpcInParallel :: [String] -> IO ()
-
-
-
-inParallel :: [String] -> IO ()
+inParallel :: [Task] -> IO ()
 inParallel tasks = do
   ts <- forM tasks $ \case
-    "acquire" -> async acquire
-    "process" -> async process
-    "archive" -> async archive
-    _         -> error "unknown task"
+    Acquire -> async acquire
+    Process -> async process
+    Archive -> async archive
   mapM_ wait ts
 
 
 
+rpcInParallel :: [Task] -> IO ()
 rpcInParallel _ = return ()
 
 
