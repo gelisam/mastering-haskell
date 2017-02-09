@@ -1,44 +1,24 @@
-{-# LANGUAGE GADTs, LambdaCase #-}
+{-# LANGUAGE GADTs #-}
 module Main where
-import Control.Concurrent.Async
 
 main :: IO ()
-main = do
-  r1 <- async $ rpcInParallel [Acquire, Process, Archive]
-  r2 <- async $ rpcInParallel [Process, Process, Process]
-  r3 <- async $ rpcInParallel [Process, Process, Process]
-  mapM_ wait [r1,r2,r3]
+main = do let exp1 = putStrLn (reverse "hello")
+          let exp2 = PutStrLn <@> (Reverse <@> String "hello")
+          exp1
+          eval exp2
 
-data Task where
-  Acquire :: Task
-  Process :: Task
-  Archive :: Task
+infixl 4 <@>
+(<@>) :: AST (a -> b) -> AST a -> AST b
+(<@>) = Ap
 
-inParallel :: [Task] -> IO ()
-inParallel tasks = do
-  ts <- forM tasks $ \case
-    Acquire -> async acquire
-    Process -> async process
-    Archive -> async archive
-  mapM_ wait ts
+data AST a where
+  Ap       :: AST (a -> b) -> AST a -> AST b
+  String   :: String -> AST String
+  Reverse  :: AST (String -> String)
+  PutStrLn :: AST (String -> IO ())
 
-
-
-rpcInParallel :: [Task] -> IO ()
-rpcInParallel _ = return ()
-
-
-
-acquire :: IO ()
-acquire = return ()
-
-process :: IO ()
-process = return ()
-
-archive :: IO ()
-archive = return ()
-
-
-
-forM :: [a] -> (a -> IO b) -> IO [b]
-forM = flip mapM
+eval :: AST a -> a
+eval (Ap  f x)  = (eval f) (eval x)
+eval (String s) = s
+eval Reverse    = reverse
+eval PutStrLn   = putStrLn
