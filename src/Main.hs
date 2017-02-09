@@ -1,28 +1,34 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 import Control.Distributed.Process
-import Control.Distributed.Process.Backend.SimpleLocalnet                                          ; import Control.Concurrent
-import Control.Distributed.Process.Closure                                                         ; import Data.IORef
-import Control.Distributed.Process.Node (initRemoteTable)                                          ; import System.Environment
-import Control.Distributed.Static hiding (initRemoteTable)                                         ; sleep :: Double -> IO (); sleep seconds = threadDelay $ round $ seconds * 1000 * 1000; uInt :: Int -> Int; uInt = id; uString :: String -> String; uString = id; uContinuouslyPrint :: () -> Int -> String -> Process (); uContinuouslyPrint () i s = do { liftIO $ print (i, s); liftIO $ sleep 0.5; uContinuouslyPrint () i s }; remotable ['uInt, 'uString, 'uContinuouslyPrint]; cInt :: Int -> Closure Int; cInt = $(mkClosure 'uInt); cString :: String -> Closure String; cString = $(mkClosure 'uString); cContinuouslyPrint :: Closure (Int -> String -> Process ()); cContinuouslyPrint = $(mkClosure 'uContinuouslyPrint) ()
-
+import Control.Distributed.Process.Backend.SimpleLocalnet
+import Control.Distributed.Process.Closure
+import Control.Distributed.Process.Node (initRemoteTable)                                          ; import Control.Concurrent
+import Control.Distributed.Static hiding (initRemoteTable)                                         ; import System.Environment
+import Data.IORef                                                                                  ; sleep :: Double -> IO (); sleep seconds = threadDelay $ round $ seconds * 1000 * 1000; uIORef :: IORef Int -> IORef Int; uIORef = id; uContinuouslyUpdate :: () -> IORef Int -> Process (); uContinuouslyUpdate () ref = do { liftIO $ modifyIORef ref (+1); liftIO $ sleep 0.5; uContinuouslyUpdate () ref }; remotable ['uIORef, 'uContinuouslyUpdate]; cIORef :: IORef Int -> Closure (IORef Int); cIORef = $(mkClosure 'uIORef); cContinuouslyUpdate :: Closure (IORef Int -> Process ()); cContinuouslyUpdate = $(mkClosure 'uContinuouslyUpdate) ()
 
 distributedMain :: NodeId -> [NodeId] -> Process ()
 distributedMain thisNode otherNodes = do
-  let allNodes = thisNode : otherNodes
-  forM_ (zip [1..] allNodes) $ \(i, node) -> do
-    forM_ ["a","b"] $ \s -> do
-      spawn' node $ cContinuouslyPrint <@> cInt i <@> cString s
+  ref <- liftIO $ newIORef 0
+  forM_ otherNodes $ \node -> do
+    spawn' node $ cContinuouslyUpdate <@> cIORef ref
+                                        -- IORef not serializable
+
+
+
+
+continuouslyUpdate :: IORef Int -> Process ()
+continuouslyUpdate ref = do liftIO $ modifyIORef ref (+1)
+                            liftIO $ sleep 0.5
+                            continuouslyUpdate ref
+
+
+
+
+
 
 spawn' :: NodeId -> Closure (Process ()) -> Process ()
 spawn' node cBody = void $ spawn node cBody
-
-continuouslyPrint :: Int -> String -> Process ()
-continuouslyPrint i s = do liftIO $ print (i, s)
-                           liftIO $ sleep 0.5
-                           continuouslyPrint i s
-
-
 
 infixl 4 <@>
 (<@>) :: Closure (a -> b) -> Closure a -> Closure b
