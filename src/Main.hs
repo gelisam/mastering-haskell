@@ -1,24 +1,34 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Main where
+import Control.Distributed.Process.Closure
+import Control.Distributed.Process.Node (initRemoteTable)
+import Control.Distributed.Static hiding (initRemoteTable)
+import Data.Typeable
+
+greet :: String -> String -> IO ()
+greet greeting name = putStrLn $ greeting ++ " " ++ name ++ "!"
+
+remotable ['greet]
+
+cGreet :: String -> Closure (String -> IO ())
+cGreet = $(mkClosure 'greet)
+
+eval :: Typeable a => Closure a -> a
+eval cX = case unclosure remoteTable cX of
+  Left  e -> error e
+  Right x -> x
 
 main :: IO ()
-main = do let exp1 = putStrLn (reverse "hello")
-          let exp2 = PutStrLn <@> (Reverse <@> String "hello")
-          exp1
-          eval exp2
+main = eval (cGreet "hello") "world"
 
-infixl 4 <@>
-(<@>) :: AST (a -> b) -> AST a -> AST b
-(<@>) = Ap
 
-data AST a where
-  Ap       :: AST (a -> b) -> AST a -> AST b
-  String   :: String -> AST String
-  Reverse  :: AST (String -> String)
-  PutStrLn :: AST (String -> IO ())
 
-eval :: AST a -> a
-eval (Ap  f x)  = (eval f) (eval x)
-eval (String s) = s
-eval Reverse    = reverse
-eval PutStrLn   = putStrLn
+
+
+
+
+
+
+
+remoteTable :: RemoteTable
+remoteTable = __remoteTable initRemoteTable
