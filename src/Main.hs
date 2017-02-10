@@ -7,7 +7,8 @@ wait :: Async a -> Process a
 wait asyncX = realWait asyncX >>= \case
   Success   x -> return x
   Exception e -> error e
-  LostContact -> error "lost contact"
+  LostContact -> do liftIO $ sleep 1
+                    wait asyncX
 
 
 
@@ -45,6 +46,14 @@ instance Monad Process where
 
 realWait :: Async a -> Process (Result a)
 realWait = undefined
+
+
+
+sleep :: Double -> IO ()
+sleep = undefined
+
+liftIO :: IO a -> Process a
+liftIO = undefined
 
 
 
