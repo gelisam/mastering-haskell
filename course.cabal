@@ -23,7 +23,8 @@ executable course
                      , distributed-process
                      , distributed-process-simplelocalnet
                      , distributed-static
+                     , exceptions
                      , time
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options: -W -Wall
+  ghc-options: -W -Wall -Wno-redundant-constraints
