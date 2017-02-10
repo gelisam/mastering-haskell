@@ -9,6 +9,23 @@ import Data.IORef                                                               
 
 type Async a = IORef (Either (Maybe a) ProcessId)
 
+wait :: Serializable a => Async a -> Process a
+wait ref = liftIO (readIORef ref) >>= \case
+  Left Nothing  -> error "some remote exception"
+  Left (Just x) -> return x
+  
+  Right q -> do maybeX <- receiveWait
+                  [ matchIf (\(q', _     ) -> q' == q)
+                            (\(_ , maybeX) -> return maybeX)
+                  ]
+                liftIO $ writeIORef ref (Left maybeX)
+                wait ref
+
+
+
+
+
+
 async :: Serializable a                                                                            => CSend (ProcessId, Maybe a)
       => NodeId -> Closure (Process a) -> Process (Async a)
 async node cBody = do
@@ -23,17 +40,6 @@ runThenSendBack body p = onException (sendBack . Just =<< body)
   where sendBack :: Maybe a -> Process ()
         sendBack maybeX = do q <- getSelfPid
                              send p (q, maybeX)
-
-
-
-wait :: Serializable a
-     => Async a -> Process a
-wait ref = liftIO (readIORef ref) >>= \case
-  Left Nothing  -> error "some remote exception"
-  Left (Just x) -> return x
-  Right q -> do (_,r) <- receiveWait [matchIf ((== q) . fst) return]
-                liftIO $ writeIORef ref (Left r)
-                wait ref
 
 
 
