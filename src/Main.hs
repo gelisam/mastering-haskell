@@ -13,10 +13,13 @@ wait :: Serializable a => Async a -> Process a
 wait ref = liftIO (readIORef ref) >>= \case
   Left Nothing  -> error "some remote exception"
   Left (Just x) -> return x
-  
-  Right q -> do maybeX <- receiveWait
+  Right q -> do _ <- monitor q
+                maybeX <- receiveWait
                   [ matchIf (\(q', _     ) -> q' == q)
                             (\(_ , maybeX) -> return maybeX)
+                  , matchIf (\(ProcessMonitorNotification _ q' d) ->
+                              q' == q && d /= DiedNormal)
+                            (\_ -> return Nothing)
                   ]
                 liftIO $ writeIORef ref (Left maybeX)
                 wait ref
