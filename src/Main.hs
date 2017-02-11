@@ -14,7 +14,7 @@ attempt1 :: Process (Maybe Int)
 attempt2 :: Process (Maybe Int)
 
 tryYourBest :: Process Int
-tryYourBest = attempt1 `orElse` attempt2 `orElse` return 0
+tryYourBest = attempt1 `orElse` attempt2  -- type error
 
 infixr 3 `orElse`
 orElse :: Process (Maybe a) -> Process a -> Process a
