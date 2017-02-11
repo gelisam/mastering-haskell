@@ -9,8 +9,8 @@ buyProduct p = do -- TODO: charge credit card, ship the item...
     decreaseInventory :: Process ()
     decreaseInventory = decreaseRemoteInventory p >>= \case
       Just () -> return ()
-      Nothing -> error "lost contact"
-
+      Nothing -> do liftIO $ sleep 1
+                    decreaseInventory
 
 
 
@@ -67,6 +67,14 @@ data ProductId
 
 decreaseRemoteInventory :: ProductId -> Process (Maybe ())
 decreaseRemoteInventory = undefined
+
+
+
+sleep :: Double -> IO ()
+sleep = undefined
+
+liftIO :: IO a -> Process a
+liftIO = undefined
 
 
 
