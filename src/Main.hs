@@ -1,28 +1,36 @@
 {-# LANGUAGE LambdaCase #-}
 module Main where
+import Control.Monad.Trans.Maybe
 
 
-
-wait :: Async a -> Process (Maybe a)
+wait :: Async a -> MaybeT Process a
 wait asyncX = realWait asyncX >>= \case
-  Success   x -> return (Just x)
+  Success   x -> return x
   Exception e -> error e
-  LostContact -> return Nothing
+  LostContact -> empty
 
 
-attempt1 :: Process (Maybe Int)
-attempt2 :: Process (Maybe Int)
+attempt1 :: MaybeT Process Int
+attempt2 :: MaybeT Process Int
 
-tryYourBest :: Process Int
-tryYourBest = attempt1 `orElse` attempt2  -- type error
+tryYourBest :: MaybeT Process Int
+tryYourBest = attempt1 <|> attempt2 <|> return 0
 
-infixr 3 `orElse`
-orElse :: Process (Maybe a) -> Process a -> Process a
-orElse body fallback = body >>= \case
-  Just x  -> return x
-  Nothing -> fallback
+(<|>) :: MaybeT Process a -> MaybeT Process a -> MaybeT Process a
 
 
+
+
+
+
+
+MaybeT mMaybeX <|> MaybeT mMaybeX' = MaybeT $ do
+  mMaybeX >>= \case
+    Just x  -> return (Just x)
+    Nothing -> mMaybeX'
+  
+empty :: MaybeT Process a
+empty = MaybeT $ return Nothing
 
 attempt1 = undefined
 attempt2 = undefined
@@ -43,7 +51,7 @@ instance Applicative Process where
 instance Monad Process where
   (>>=) = undefined
 
-realWait :: Async a -> Process (Result a)
+realWait :: Async a -> MaybeT Process (Result a)
 realWait = undefined
 
 
