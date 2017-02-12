@@ -4,20 +4,19 @@ import Data.Map as Map
 import Data.Semigroup
 import Data.Set as Set
 
--- 2P-Set ("2 Phases")
-newtype AddRemove = AddRemove (PermanentFlag,PermanentFlag)
-  deriving Semigroup
+main :: IO ()
+main = do
+  x0 <- return (      add    "A"); print (value x0 :: Set String)
+  x1 <- return (x0 <> remove "A"); print (value x1 :: Set String)
+  x2 <- return (x1 <> add    "A"); print (value x2 :: Set String)
 
-instance CRDT AddRemove Bool where
-  value (AddRemove x) = case value x of
-    (True, False) -> True
-    _             -> False
 
-add :: a -> CSet a AddRemove
-add x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,ff)
 
-remove :: a -> CSet a AddRemove
-remove x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,tt)
+
+
+
+
+
 
 
 
@@ -61,6 +60,14 @@ instance (Ord k, CRDT b Bool) => CRDT (CSet k b) (Set k) where
                         $ Map.filter value m
 
 
+newtype AddRemove = AddRemove (PermanentFlag,PermanentFlag)
+  deriving Semigroup
 
-main :: IO ()
-main = return ()
+instance CRDT AddRemove Bool where
+  value (AddRemove x) = case value x of
+    (True, False) -> True
+    _             -> False
+
+add, remove :: a -> CSet a AddRemove
+add    x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,ff)
+remove x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,tt)
