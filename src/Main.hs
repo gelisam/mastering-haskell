@@ -5,24 +5,28 @@ import Data.Semigroup
 import Data.Set as Set
 import Data.Unique
 
--- OR-Set ("Observed Removed")
-newtype OR = OR (Set Unique, Set Unique)
-  deriving Semigroup
+main :: IO ()
+main = do
+  x0 <-             add    "A"    ; print (value x0 :: Set String)
+  x1 <- (x0 <>) <$> remove "A" x0 ; print (value x1 :: Set String)
+  x2 <- (x1 <>) <$> add    "A"    ; print (value x2 :: Set String)
+  
+  xL1 <- (x2  <>) <$> add    "B"
+  
+  xR1 <- (x2  <>) <$> add    "B"
+  xR2 <- (xR1 <>) <$> remove "B" xR1
+  
+  print (value (xL1 <> xR2) :: Set String)
 
-instance CRDT OR Bool where
-  value (OR (us,rus)) = not $ Set.null $ Set.difference us rus
 
-add :: a -> IO (CSet a OR)
-add x = do
-  u <- newUnique
-  let v = OR (Set.singleton u, Set.empty)
-  return $ CSet $ CMap $ Map.singleton x v
 
-remove :: Ord a => a -> CSet a OR -> IO (CSet a OR)
-remove x (CSet (CMap m)) = do
-  let OR (us,_) = Map.findWithDefault (OR mempty) x m
-  let v = OR (Set.empty, us)
-  return $ CSet $ CMap $ Map.singleton x v
+
+
+
+
+
+
+
 
 
 
@@ -63,6 +67,20 @@ instance (Ord k, CRDT b Bool) => CRDT (CSet k b) (Set k) where
                         $ Map.filter value m
 
 
+newtype OR = OR (Set Unique, Set Unique)
+  deriving Semigroup
 
-main :: IO ()
-main = return ()
+instance CRDT OR Bool where
+  value (OR (us,rus)) = not $ Set.null $ Set.difference us rus
+
+add :: a -> IO (CSet a OR)
+add x = do
+  u <- newUnique
+  let v = OR (Set.singleton u, Set.empty)
+  return $ CSet $ CMap $ Map.singleton x v
+
+remove :: Ord a => a -> CSet a OR -> IO (CSet a OR)
+remove x (CSet (CMap m)) = do
+  let OR (us,_) = Map.findWithDefault (OR mempty) x m
+  let v = OR (Set.empty, us)
+  return $ CSet $ CMap $ Map.singleton x v
