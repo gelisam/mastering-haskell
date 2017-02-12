@@ -9,8 +9,8 @@ buyProduct p = do -- TODO: charge credit card, ship the item...
     decreaseInventory :: Process ()
     decreaseInventory = decreaseRemoteInventory p >>= \case
       Just () -> return ()
-      Nothing -> do liftIO $ sleep 1
-                    decreaseInventory
+      Nothing -> return ()
+
 
 
 
