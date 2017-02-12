@@ -3,23 +3,26 @@ module Main where
 import Data.Map as Map
 import Data.Semigroup
 import Data.Set as Set
+import Data.Unique
 
-main :: IO ()
-main = do
-  x0 <- return (      add    "A"); print (value x0 :: Set String)
-  x1 <- return (x0 <> remove "A"); print (value x1 :: Set String)
-  x2 <- return (x1 <> add    "A"); print (value x2 :: Set String)
+-- OR-Set ("Observed Removed")
+newtype OR = OR (Set Unique, Set Unique)
+  deriving Semigroup
 
+instance CRDT OR Bool where
+  value (OR (us,rus)) = not $ Set.null $ Set.difference us rus
 
+add :: a -> IO (CSet a OR)
+add x = do
+  u <- newUnique
+  let v = OR (Set.singleton u, Set.empty)
+  return $ CSet $ CMap $ Map.singleton x v
 
-
-
-
-
-
-
-
-
+remove :: Ord a => a -> CSet a OR -> IO (CSet a OR)
+remove x (CSet (CMap m)) = do
+  let OR (us,_) = Map.findWithDefault (OR mempty) x m
+  let v = OR (Set.empty, us)
+  return $ CSet $ CMap $ Map.singleton x v
 
 
 
@@ -60,14 +63,6 @@ instance (Ord k, CRDT b Bool) => CRDT (CSet k b) (Set k) where
                         $ Map.filter value m
 
 
-newtype AddRemove = AddRemove (PermanentFlag,PermanentFlag)
-  deriving Semigroup
 
-instance CRDT AddRemove Bool where
-  value (AddRemove x) = case value x of
-    (True, False) -> True
-    _             -> False
-
-add, remove :: a -> CSet a AddRemove
-add    x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,ff)
-remove x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,tt)
+main :: IO ()
+main = return ()
