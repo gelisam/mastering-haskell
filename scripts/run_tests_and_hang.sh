@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-course &
+course master localhost 1237 &
 
 # wait for the child process to terminate
 wait
