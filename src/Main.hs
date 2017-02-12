@@ -19,7 +19,7 @@ sync = forever $ do
       xsL <- getLocalInventory
       let xs' = merge xsL xsR
       applyDiffLocal  (diff xsL xs')
-      applyDiffRemote (diff xsR xs')
+      applyDiffRemote (diff xsR xs')  -- potential conflict!
     Nothing -> sync
 
 
