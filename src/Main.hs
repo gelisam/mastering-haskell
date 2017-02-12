@@ -13,5 +13,5 @@ main :: IO ()
 main = do
   let xs  = Set.fromList ["apple","banana"]
       xsL = Set.insert "pineapple" xs
-      xsR = Set.insert "melon"     xs
+      xsR = Set.delete "banana"    xs
   print $ merge xsL xsR
