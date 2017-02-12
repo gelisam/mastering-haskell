@@ -1,16 +1,16 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 module Main where
+import Data.Map as Map
 import Data.Semigroup
 import Data.Set as Set
 
-class Semigroup s => CRDT s a where
-  value :: s -> a
 
-instance CRDT () () where
-  value () = ()
 
-instance (CRDT s a, CRDT t b) => CRDT (s,t) (a,b) where
-  value (s,t) = (value s, value t)
+
+
+
+instance (Ord k, CRDT v a) => CRDT (Map k v) (Map k a) where
+  value = fmap value
 
 
 
@@ -18,10 +18,19 @@ instance (CRDT s a, CRDT t b) => CRDT (s,t) (a,b) where
 
 main :: IO ()
 main = do
-  let x1 = (tt, (ff, (ff, ())))
-      x2 = (ff, (tt, (ff, ())))
-  print (value (x1 <> x2) :: (Bool, (Bool, (Bool, ()))))
+  let x1 = Map.fromList [("A", tt), ("C", ff)]
+      x2 = Map.fromList [("B", ff), ("C", tt)]
+  print (value (x1 <> x2) :: Map String Bool)
+  print (value (x2 <> x1) :: Map String Bool)
 
+
+
+class Semigroup s => CRDT s a where
+  value :: s -> a
+
+
+instance (CRDT s a, CRDT t b) => CRDT (s,t) (a,b) where
+  value (s,t) = (value s, value t)
 
 
 newtype PermanentFlag = PermanentFlag (Set ())
