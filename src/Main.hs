@@ -1,16 +1,16 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 module Main where
 import Data.Map as Map
 import Data.Semigroup
 import Data.Set as Set
 
-newtype CMap k v = CMap (Map k v)
+newtype CSet k b = CSet (CMap k b)
+  deriving Semigroup
 
-instance (Ord k, Semigroup v) => Semigroup (CMap k v) where
-  CMap m <> CMap m' = CMap (unionWith (<>) m m')
-
-instance (Ord k, CRDT v a) => CRDT (CMap k v) (Map k a) where
-  value (CMap m) = fmap value m
+instance (Ord k, CRDT b Bool) => CRDT (CSet k b) (Set k) where
+  value (CSet (CMap m)) = Set.fromList
+                        $ Map.keys
+                        $ Map.filter value m
 
 
 
@@ -18,10 +18,9 @@ instance (Ord k, CRDT v a) => CRDT (CMap k v) (Map k a) where
 
 main :: IO ()
 main = do
-  let x1 = CMap $ Map.fromList [("A", tt), ("C", ff)]
-      x2 = CMap $ Map.fromList [("B", ff), ("C", tt)]
-  print (value (x1 <> x2) :: Map String Bool)
-  print (value (x2 <> x1) :: Map String Bool)
+  let x1 = CSet $ CMap $ Map.fromList [("A", tt)]
+      x2 = CSet $ CMap $ Map.fromList [("B", ff)]
+  print (value (x1 <> x2) :: Set String)
 
 
 
@@ -42,3 +41,12 @@ instance CRDT PermanentFlag Bool where
 ff, tt :: PermanentFlag
 ff = PermanentFlag Set.empty
 tt = PermanentFlag (Set.singleton ())
+
+
+newtype CMap k v = CMap (Map k v)
+
+instance (Ord k, Semigroup v) => Semigroup (CMap k v) where
+  CMap m1 <> CMap m2 = CMap (unionWith (<>) m1 m2)
+
+instance (Ord k, CRDT v a) => CRDT (CMap k v) (Map k a) where
+  value (CMap m) = fmap value m
