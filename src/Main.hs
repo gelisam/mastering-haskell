@@ -4,13 +4,13 @@ import Data.Map as Map
 import Data.Semigroup
 import Data.Set as Set
 
+newtype CMap k v = CMap (Map k v)
 
+instance (Ord k, Semigroup v) => Semigroup (CMap k v) where
+  CMap m <> CMap m' = CMap (unionWith (<>) m m')
 
-
-
-
-instance (Ord k, CRDT v a) => CRDT (Map k v) (Map k a) where
-  value = fmap value
+instance (Ord k, CRDT v a) => CRDT (CMap k v) (Map k a) where
+  value (CMap m) = fmap value m
 
 
 
@@ -18,8 +18,8 @@ instance (Ord k, CRDT v a) => CRDT (Map k v) (Map k a) where
 
 main :: IO ()
 main = do
-  let x1 = Map.fromList [("A", tt), ("C", ff)]
-      x2 = Map.fromList [("B", ff), ("C", tt)]
+  let x1 = CMap $ Map.fromList [("A", tt), ("C", ff)]
+      x2 = CMap $ Map.fromList [("B", ff), ("C", tt)]
   print (value (x1 <> x2) :: Map String Bool)
   print (value (x2 <> x1) :: Map String Bool)
 
