@@ -1,19 +1,17 @@
 module Main where
+import Data.Set as Set
 
 
 
 
 
 
-
-
-
+merge :: Ord a => Set a -> Set a -> Set a
+merge = Set.union
 
 main :: IO ()
-<<<<<<< HEAD
-main = putStrLn "my favourite color is yellow"
-||||||| merged common ancestors
-main = putStrLn "my favourite color is blue"
-=======
-main = putStrLn "my favourite color is violet"
->>>>>>>
+main = do
+  let xs  = Set.fromList ["apple","banana"]
+      xsL = Set.insert "pineapple" xs
+      xsR = Set.insert "melon"     xs
+  print $ merge xsL xsR
