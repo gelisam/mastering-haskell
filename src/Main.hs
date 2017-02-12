@@ -5,7 +5,7 @@ import Data.Set as Set
 
 
 
-
+-- G-Set ("Grow only")
 merge :: Ord a => Set a -> Set a -> Set a
 merge = Set.union
 
