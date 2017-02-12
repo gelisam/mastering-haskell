@@ -4,23 +4,23 @@ import Data.Map as Map
 import Data.Semigroup
 import Data.Set as Set
 
-newtype CSet k b = CSet (CMap k b)
+-- 2P-Set ("2 Phases")
+newtype AddRemove = AddRemove (PermanentFlag,PermanentFlag)
   deriving Semigroup
 
-instance (Ord k, CRDT b Bool) => CRDT (CSet k b) (Set k) where
-  value (CSet (CMap m)) = Set.fromList
-                        $ Map.keys
-                        $ Map.filter value m
+instance CRDT AddRemove Bool where
+  value (AddRemove x) = case value x of
+    (True, False) -> True
+    _             -> False
+
+add :: a -> CSet a AddRemove
+add x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,ff)
+
+remove :: a -> CSet a AddRemove
+remove x = CSet $ CMap $ Map.singleton x $ AddRemove (tt,tt)
 
 
 
-
-
-main :: IO ()
-main = do
-  let x1 = CSet $ CMap $ Map.fromList [("A", tt)]
-      x2 = CSet $ CMap $ Map.fromList [("B", ff)]
-  print (value (x1 <> x2) :: Set String)
 
 
 
@@ -50,3 +50,17 @@ instance (Ord k, Semigroup v) => Semigroup (CMap k v) where
 
 instance (Ord k, CRDT v a) => CRDT (CMap k v) (Map k a) where
   value (CMap m) = fmap value m
+
+
+newtype CSet k b = CSet (CMap k b)
+  deriving Semigroup
+
+instance (Ord k, CRDT b Bool) => CRDT (CSet k b) (Set k) where
+  value (CSet (CMap m)) = Set.fromList
+                        $ Map.keys
+                        $ Map.filter value m
+
+
+
+main :: IO ()
+main = return ()
