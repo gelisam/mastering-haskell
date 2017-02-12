@@ -9,17 +9,18 @@ buyProduct p = do -- TODO: charge credit card, ship the item...
     decreaseInventory :: Process ()
     decreaseInventory = decreaseRemoteInventory p >>= \case
       Just () -> return ()
-      Nothing -> return ()
+      Nothing -> decreaseLocalInventory p
 
-
-
-
-
-
-
-
-
-
+sync :: Process a
+sync = forever $ do
+  liftIO $ sleep 20
+  getRemoteInventory >>= \case
+    Just xsR -> do
+      xsL <- getLocalInventory
+      let xs' = merge xsL xsR
+      applyDiffLocal  (diff xsL xs')
+      applyDiffRemote (diff xsR xs')
+    Nothing -> sync
 
 
 
@@ -65,8 +66,35 @@ instance MonadProcess m => MonadProcess (MaybeT m) where
 
 data ProductId
 
+decreaseLocalInventory :: ProductId -> Process ()
+decreaseLocalInventory = undefined
+
 decreaseRemoteInventory :: ProductId -> Process (Maybe ())
 decreaseRemoteInventory = undefined
+
+
+data Inventory
+
+merge :: Inventory -> Inventory -> Inventory
+merge = undefined
+
+getLocalInventory :: Process Inventory
+getLocalInventory = undefined
+
+getRemoteInventory :: Process (Maybe Inventory)
+getRemoteInventory = undefined
+
+
+data InventoryDiff
+
+diff :: Inventory -> Inventory -> InventoryDiff
+diff = undefined
+
+applyDiffLocal :: InventoryDiff -> Process ()
+applyDiffLocal = undefined
+
+applyDiffRemote :: InventoryDiff -> Process ()
+applyDiffRemote = undefined
 
 
 
@@ -75,6 +103,9 @@ sleep = undefined
 
 liftIO :: IO a -> Process a
 liftIO = undefined
+
+forever :: Monad m => m () -> m a
+forever body = body >> forever body
 
 
 
