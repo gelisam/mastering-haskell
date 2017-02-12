@@ -1,17 +1,17 @@
 module Main where
+import Data.Semigroup
 import Data.Set as Set
 
+-- (<>) must be commutative and idempotent (and associative).
+class Semigroup s => CRDT s
+  -- (<>) :: s -> s -> s
 
+instance Ord a => CRDT (Set a)
 
-
-
--- G-Set ("Grow only")
-merge :: Ord a => Set a -> Set a -> Set a
-merge = Set.union
 
 main :: IO ()
 main = do
   let xs  = Set.fromList ["apple","banana"]
       xsL = Set.insert "pineapple" xs
-      xsR = Set.delete "banana"    xs
-  print $ merge xsL xsR
+      xsR = Set.insert "melon"     xs
+  print (xsL <> xsR)
