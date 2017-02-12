@@ -4,7 +4,7 @@ import Data.Set as Set
 
 -- (<>) must be commutative and idempotent (and associative).
 class Semigroup s => CRDT s
-  -- (<>) :: s -> s -> s
+  -- (<>) :: s -> s -> Either Conflict s
 
 instance Ord a => CRDT (Set a)
 
